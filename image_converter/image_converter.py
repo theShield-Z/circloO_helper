@@ -4,6 +4,51 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import numba
+import subprocess
+
+
+# MAIN FUNCTIONS #######################################################################################################
+
+def image_to_circloo(img_path, downsample_factor,
+                     start_x, start_y, size=1, start_line=-1,
+                     threshold=.5, channel_weights=(1, 1, 1),
+                     reduce_objects=True, show_img=True):
+    """
+
+    :param img_path:            Path of input image
+    :param downsample_factor:   Factor by which to decrease image size; 1 for no change
+    :param start_x:             Initial x coordinate (left)
+    :param start_y:             Initial y coordinate (top)
+    :param size:                Pixel size
+    :param start_line:          Line enumeration; -1 to turn off
+    :param threshold:           When reducing from rgb to grayscale, threshold of average value
+    :param channel_weights:     When reducing from rgb to grayscale, weighting to average the value
+    :param reduce_objects:      Uses optimization algorithms if True
+    :param show_img:            Shows the dithered image if True
+    :return:                String of circloO objects (w/o header)
+    """
+    # Open Image.
+    img = Image.open(f"{img_path}")
+
+    # Convert to numpy array.
+    data = np.array(img).astype(np.float32) / 255   # normalize values as floats b/w 0 & 1
+    if len(data.shape) == 2:    # add new channel if B&W image to preserve algorithms
+        data = data[:, :, np.newaxis]
+
+    data_smaller = downsample(data, downsample_factor)
+    data_adjusted = floyd_steinberg(data_smaller)
+
+    if show_img:
+        plt.imshow(data_adjusted[:, :, 0], cmap='Greys_r')
+        plt.show()
+
+    if reduce_objects:
+        data_single_channel = reduce_channels(data_adjusted, threshold=threshold, channel_weights=channel_weights)
+        data_reduced = reduce_by_length(data_single_channel)
+        return reduced_build(data_reduced, start_x=start_x, start_y=start_y, size=size, start_line=start_line)
+    else:
+        return build(data_adjusted, threshold=threshold, channel_weights=channel_weights,
+                     start_x=start_x, start_y=start_y, size=size, start_line=start_line)
 
 
 @numba.jit("f4[:,:,:](f4[:,:,:])", nopython=True, nogil=True)
@@ -18,13 +63,13 @@ def floyd_steinberg(image):
                 err = image[i, j, c] - rounded
                 image[i, j, c] = rounded
                 if i < lx - 1:
-                    image[i + 1, j, c] += (7 / 24) * err            # Original factor from paper: 7/16
+                    image[i + 1, j, c] += (7 / 24) * err  # Original factor from paper: 7/16
                 if j < ly - 1:
-                    image[i, j + 1, c] += (5 / 24) * err            # Original: 5/16
+                    image[i, j + 1, c] += (5 / 24) * err  # Original: 5/16
                     if i > 0:
-                        image[i - 1, j + 1, c] += (1 / 24) * err    # Original: 1/16
+                        image[i - 1, j + 1, c] += (1 / 24) * err  # Original: 1/16
                     if i < lx - 1:
-                        image[i + 1, j + 1, c] += (3 / 24) * err    # Original: 3/16
+                        image[i + 1, j + 1, c] += (3 / 24) * err  # Original: 3/16
     return image
 
 
@@ -55,8 +100,8 @@ def build(arr: np.array, threshold=.5, channel_weights=(1, 1, 1), start_x=1500, 
         for j in range(arr.shape[1]):
             values = arr[i, j]
             avg = ((values[0] * channel_weights[0]
-                   + values[1] * channel_weights[1]
-                   + values[2] * channel_weights[2])
+                    + values[1] * channel_weights[1]
+                    + values[2] * channel_weights[2])
                    / sum(channel_weights))
 
             if avg < threshold:
@@ -74,23 +119,99 @@ def build(arr: np.array, threshold=.5, channel_weights=(1, 1, 1), start_x=1500, 
     return ''.join(text)
 
 
+# OPTIMIZATION #########################################################################################################
+
+def reduce_channels(arr: np.array, threshold=.5, channel_weights=(1, 1, 1)):
+    """Reduce channels in image array from three (rgb) back to one (grayscale)."""
+    new_arr = np.zeros((arr.shape[0], arr.shape[1]))
+
+    for i in range(arr.shape[0]):
+        for j in range(arr.shape[1]):
+            values = arr[i, j]
+            avg = ((values[0] * channel_weights[0]
+                    + values[1] * channel_weights[1]
+                    + values[2] * channel_weights[2])
+                   / sum(channel_weights))
+
+            new_arr[i, j] = 1 if avg <= threshold else 0
+
+    return new_arr
+
+
+def reduced_build(arr: np.array, start_x=1500, start_y=1500, size=1, start_line=-1):
+    """Convert a reduced image array into a string of circloO objects."""
+    text = []
+    xpos = 0
+    ypos = 0
+    cur_line = 0
+
+    for i in range(arr.shape[0]):
+        for j in range(arr.shape[1]):
+            value = arr[i, j]
+
+            if value > 0:
+                text.append(f"b {xpos + start_x + size * value} {ypos + start_y} {size * value} {size} 0\n")
+
+                if start_line >= 0:
+                    text.append(f"< {cur_line}\n")
+                    cur_line += 1
+
+            xpos += 2 * size
+
+        xpos = 0
+        ypos += 2 * size
+
+    return ''.join(text)
+
+
+def reduce_by_length(arr: np.array):
+    """Reduce a binary image array into an array corresponding to the length of each pixel."""
+
+    for i in range(arr.shape[0]):
+        point = None
+
+        for j in range(arr.shape[1]):
+            cur = arr[i, j]
+
+            if cur == 1:
+                if point is None:
+                    point = (i, j)
+                else:
+                    arr[point] += 1
+                    arr[i, j] = 0
+            else:
+                point = None
+
+    return arr
+
+
+# FILES & ADB ##########################################################################################################
+
+def text_to_file(output_path, text):
+    """Convert a string of text into a file."""
+    f = open(output_path, 'w')
+    f.writelines(text)
+
+
+def push_to_android(file_path, destination='/sdcard'):
+    """
+    Pushes a file to an Android device using ADB.
+    """
+    try:
+        command = ['adb', 'push', file_path, destination]
+
+        result = subprocess.run(command, capture_output=True, text=True)
+
+        if result.returncode == 0:
+            print(f"File successfully pushed to {destination} folder.")
+        else:
+            print(f"Error pushing file: {result.stderr}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
 # EXAMPLE CODE #########################################################################################################
 
-img = Image.open(r"mona_lisa.webp")
-
-# Convert to numpy array.
-data = np.array(img).astype(np.float32) / 255  # normalize values as floats between 0 & 1
-if len(data.shape) == 2:  # add new channel if B&W image to keep algorithms the same
-    data = data[:, :, np.newaxis]
-
-# Adjust data.
-data_smaller = downsample(data, 4)
-data_adjusted = floyd_steinberg(data_smaller)
-
-# Show adjusted image.
-plt.imshow(data_adjusted[:, :, 0], cmap='Greys_r')
-plt.show()
-
-# Convert to circloO objects.
-txt = build(data_adjusted, start_line=0)
-print(txt)
+txt = image_to_circloo("mona_lisa.webp", 4, 1500, 1500, start_line=0)
+text_to_file("circloO_image.txt", txt)
+# push_to_android("circloO_image.txt", destination='/sdcard')     # ADB should be installed before use.
