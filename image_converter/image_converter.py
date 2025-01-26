@@ -212,6 +212,6 @@ def push_to_android(file_path, destination='/sdcard'):
 
 # EXAMPLE CODE #########################################################################################################
 
-txt = image_to_circloo("mona_lisa.webp", 4, 1500, 1500, start_line=0)
+txt = image_to_circloo("mona_lisa.webp", 1, 1500, 1500, start_line=0)
 text_to_file("circloO_image.txt", txt)
 # push_to_android("circloO_image.txt", destination='/sdcard')     # ADB should be installed before use.
