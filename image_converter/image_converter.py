@@ -44,7 +44,7 @@ def image_to_circloo(img_path, downsample_factor,
 
     if reduce_objects:
         data_single_channel = reduce_channels(data_adjusted, threshold=threshold, channel_weights=channel_weights)
-        data_reduced = reduce_by_length(data_single_channel)
+        data_reduced = greedy_decomposition(data_single_channel)
         return reduced_build(data_reduced, start_x=start_x, start_y=start_y, size=size, start_line=start_line)
     else:
         return build(data_adjusted, threshold=threshold, channel_weights=channel_weights,
@@ -122,8 +122,8 @@ def build(arr: np.array, threshold=.5, channel_weights=(1, 1, 1), start_x=1500, 
 # OPTIMIZATION #########################################################################################################
 
 def reduce_channels(arr: np.array, threshold=.5, channel_weights=(1, 1, 1)):
-    """Reduce channels in image array from three (rgb) back to one (grayscale)."""
-    new_arr = np.zeros((arr.shape[0], arr.shape[1]))
+    """Convert rgb binary image into greyscale (with an extra channel for greedy_decomposition() function)."""
+    new_arr = np.zeros((arr.shape[0], arr.shape[1], 2))
 
     for i in range(arr.shape[0]):
         for j in range(arr.shape[1]):
@@ -133,7 +133,7 @@ def reduce_channels(arr: np.array, threshold=.5, channel_weights=(1, 1, 1)):
                     + values[2] * channel_weights[2])
                    / sum(channel_weights))
 
-            new_arr[i, j] = 1 if avg <= threshold else 0
+            new_arr[i, j, 0] = 1 if avg <= threshold else 0
 
     return new_arr
 
@@ -147,10 +147,11 @@ def reduced_build(arr: np.array, start_x=1500, start_y=1500, size=1, start_line=
 
     for i in range(arr.shape[0]):
         for j in range(arr.shape[1]):
-            value = arr[i, j]
+            x_factor = arr[i, j, 0]
+            y_factor = arr[i, j, 1]
 
-            if value > 0:
-                text.append(f"b {xpos + start_x + size * value} {ypos + start_y} {size * value} {size} 0\n")
+            if x_factor > 0:
+                text.append(f"b {xpos + start_x + size * x_factor} {ypos + start_y + size * y_factor} {size * x_factor} {size * y_factor} 0\n")
 
                 if start_line >= 0:
                     text.append(f"< {cur_line}\n")
@@ -164,24 +165,55 @@ def reduced_build(arr: np.array, start_x=1500, start_y=1500, size=1, start_line=
     return ''.join(text)
 
 
-def reduce_by_length(arr: np.array):
-    """Reduce a binary image array into an array corresponding to the length of each pixel."""
+def greedy_decomposition(arr: np.array):
+    """Reduce a binary image array into an array corresponding to the length & width of each pixel."""
 
+    # Reduce pixels by merging side-to-side length.
     for i in range(arr.shape[0]):
         point = None
 
         for j in range(arr.shape[1]):
-            cur = arr[i, j]
+            cur = arr[i, j, 0]
 
             if cur == 1:
                 if point is None:
-                    point = (i, j)
+                    point = (i, j, 0)
                 else:
                     arr[point] += 1
-                    arr[i, j] = 0
+                    arr[i, j, 0] = 0
             else:
                 point = None
 
+    # Merge vertically if equal horizontal length.
+    for j in range(arr.shape[1]):
+        point = None
+        check_val = -1
+
+        for i in range(arr.shape[0]):
+            cur = arr[i, j, 0]
+
+            if cur == 0:
+                # Zero value, reset checker values
+                point = None
+                check_val = -1
+
+            else:
+                if point is None and check_val == -1:
+                    # First nonzero point, store checker values
+                    point = (i, j)
+                    check_val = arr[point[0], point[1], 0]
+                    arr[i, j, 1] = 1
+
+                elif arr[i, j, 0] == check_val:
+                    # Point below checker is equal, increase at check value, set cur to 0
+                    arr[point[0], point[1], 1] += 1
+                    arr[i, j, :] = 0
+
+                else:
+                    # Point below checker is new nonzero value, store new checker values
+                    point = (i, j)
+                    check_val = arr[point[0], point[1], 0]
+                    arr[i, j, 1] = 1
     return arr
 
 
@@ -213,5 +245,6 @@ def push_to_android(file_path, destination='/sdcard'):
 # EXAMPLE CODE #########################################################################################################
 
 txt = image_to_circloo("mona_lisa.webp", 1, 1500, 1500, start_line=0)
+print(txt)
 text_to_file("circloO_image.txt", txt)
-# push_to_android("circloO_image.txt", destination='/sdcard')     # ADB should be installed before use.
+# push_to_android("circloO_image.txt", destination='/sdcard')   # ADB should be installed before use
