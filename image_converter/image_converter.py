@@ -14,17 +14,17 @@ def image_to_circloo(img_path, downsample_factor,
                      threshold=.5, channel_weights=(1, 1, 1),
                      reduce_objects=True, show_img=True):
     """
-
-    :param img_path:            Path of input image
-    :param downsample_factor:   Factor by which to decrease image size; 1 for no change
-    :param start_x:             Initial x coordinate (left)
-    :param start_y:             Initial y coordinate (top)
-    :param size:                Pixel size
-    :param start_line:          Line enumeration; -1 to turn off
-    :param threshold:           When reducing from rgb to grayscale, threshold of average value
-    :param channel_weights:     When reducing from rgb to grayscale, weighting to average the value
-    :param reduce_objects:      Uses optimization algorithms if True
-    :param show_img:            Shows the dithered image if True
+    Converts an image into circloO objects via dithering & grayscale conversion.
+    :param img_path:            Path to input image
+    :param downsample_factor:   Factor to reduce image size; 1 for no change
+    :param start_x:             Initial x-coordinate (left)
+    :param start_y:             Initial y-coordinate (top)
+    :param size:                Size of each pixel; default is 1
+    :param start_line:          Line enumeration start; set negative to turn off; default is -1
+    :param threshold:           Threshold for grayscale conversion; default is 0.5
+    :param channel_weights:     Weights for RGB channels; default is (1, 1, 1)
+    :param reduce_objects:      If True, uses optimization algorithms--HIGHLY RECOMMENDED; default is True
+    :param show_img:            If True, displays the processed image; default is True
     :return:                String of circloO objects (w/o header)
     """
     # Open Image.
@@ -91,30 +91,20 @@ def build(arr: np.array, threshold=.5, channel_weights=(1, 1, 1), start_x=1500, 
     :param start_line: Line enumeration; -1 to turn off
     :return: String of circloO objects (w/o header)
     """
+    avg = np.dot(arr[:, :, :3], channel_weights) / sum(channel_weights)
+    rows, cols = np.where(avg < threshold)
+
     text = []
-    xpos = 0
-    ypos = 0
     cur_line = 0
 
-    for i in range(arr.shape[0]):
-        for j in range(arr.shape[1]):
-            values = arr[i, j]
-            avg = ((values[0] * channel_weights[0]
-                    + values[1] * channel_weights[1]
-                    + values[2] * channel_weights[2])
-                   / sum(channel_weights))
+    for i, j in zip(rows, cols):
+        xpos = j * 2 * size + start_x
+        ypos = i * 2 * size + start_y
+        text.append(f"b {xpos} {ypos} {size} {size} 0\n")
 
-            if avg < threshold:
-                text.append(f"b {xpos + start_x} {ypos + start_y} {size} {size} 0\n")
-
-                if start_line >= 0:
-                    text.append(f"< {cur_line}\n")
-                    cur_line += 1
-
-            xpos += 2 * size
-
-        xpos = 0
-        ypos += 2 * size
+        if start_line >= 0:
+            text.append(f"< {cur_line}\n")
+            cur_line += 1
 
     return ''.join(text)
 
@@ -123,18 +113,11 @@ def build(arr: np.array, threshold=.5, channel_weights=(1, 1, 1), start_x=1500, 
 
 def reduce_channels(arr: np.array, threshold=.5, channel_weights=(1, 1, 1)):
     """Convert rgb binary image into greyscale (with an extra channel for greedy_decomposition() function)."""
-    new_arr = np.zeros((arr.shape[0], arr.shape[1], 2))
+    avg = np.dot(arr[:, :, :3], channel_weights) / sum(channel_weights)
+    binary_image = (avg <= threshold).astype(np.float32)
 
-    for i in range(arr.shape[0]):
-        for j in range(arr.shape[1]):
-            values = arr[i, j]
-            avg = ((values[0] * channel_weights[0]
-                    + values[1] * channel_weights[1]
-                    + values[2] * channel_weights[2])
-                   / sum(channel_weights))
-
-            new_arr[i, j, 0] = 1 if avg <= threshold else 0
-
+    new_arr = np.zeros((arr.shape[0], arr.shape[1], 2), dtype=np.float32)
+    new_arr[:, :, 0] = binary_image
     return new_arr
 
 
