@@ -10,6 +10,8 @@ Not everything is finished at the moment, but it's fully usable. Message me if t
 
 ## Usage
 
+An example level-creation file is in `main.py`
+
 Copy all the files in the circloo_helper directory to a Python project, then `import circloo_helper as ch`.
 
 Create a level:
