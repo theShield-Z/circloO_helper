@@ -4,19 +4,25 @@ from object import Object
 
 class Level:
 
-    def __init__(self, segments=7, grav_scale=1, grav_dir=270, start_full=False, color=randint(0, 255), music=(0, 0), rec_sfx=False, objs=None):
+    def __init__(self,
+                 segments: int | float = 7,
+                 grav_scale: int | float = 1,
+                 grav_dir: int | float = 270,
+                 start_full: bool = False,
+                 color: int | float = randint(0, 255),
+                 music: tuple[int, int] = (0, 0),
+                 rec_sfx: bool = False):
         """
-        :param segments:    Number of collectables before level is completed
-        :param grav_scale:  Strength of initial gravity
-        :param grav_dir:    Direction of initial gravity
-        :param start_full:  Start the level as full
-        :param color:       Level color, 0-255
-        :param music:       Played music track; (1, track) for preferred or (2, track) to force.
-        :param rec_sfx:     Set to true to ask players to enable sfx
+        circloO Level
+        :param segments:    Number of collectables to collect before level is completed; default is 7
+        :param grav_scale:  Strength of initial gravity; default is 1
+        :param grav_dir:    Direction of initial gravity; default is 270 (down)
+        :param start_full:  Start the level as full; default is False
+        :param color:       Level color, 0-255; default is random
+        :param music:       Played music track; (1, track) for preferred or (2, track) to force; track 4 is silence; default is (0, 0)
+        :param rec_sfx:     Set to true to ask players to enable sfx; default is False
         """
-        if objs is None:
-            objs = []
-        self.objs = objs
+        self.objs = []
 
         # Header variables.
         self.segments = segments
@@ -27,35 +33,57 @@ class Level:
         self.music = music
         self.rec_sfx = rec_sfx
 
-    def add(self, obj):
+    # OBJECTS ##########################################################################################################
+
+    def add(self, obj: Object):
+        """Insert a new object at the end of the level."""
         new_obj = obj.copy()
-        new_obj.set_id(self.get_last_line())
+        new_obj.set_id(self.get_len())
         self.objs.append(new_obj)
 
-    def insert(self, line, obj):
+    def insert(self, line: int, obj: Object):
+        """Insert a new object at the given line."""
         new_obj = obj.copy()
         new_obj.set_id(line)
         self.objs.insert(line, new_obj)
-        for obj_line in range(line+1, self.get_last_line()):
+
+        # Shift ids of following objects.
+        for obj_line in range(line + 1, self.get_len()):
             self.objs[obj_line].increment_id()
 
-    def replace(self, line, obj):
+    def replace(self, line: int, obj: Object) -> Object:
+        """Replace an object at the given line with a new object.
+        :return: previous object at the given line."""
         new_obj = obj.copy()
         new_obj.set_id(line)
+        old_obj = self.objs[line]
         self.objs[line] = new_obj
+        return old_obj
 
-    def remove(self, line):
-        self.objs.pop(line)
-        for obj_line in range(line, self.get_last_line()):
+    def remove(self, line: int) -> Object:
+        """Remove an object at the given line.
+        :return: removed object"""
+        old_obj = self.objs.pop(line)
+
+        # Shift ids of following objects.
+        for obj_line in range(line, self.get_len()):
             self.objs[obj_line].increment_id(-1)
 
-    def object_at(self, line):
+        return old_obj
+
+    def object_at(self, line: int) -> Object:
+        """:return: object at the given line"""
         return self.objs[line]
 
-    def get_last_line(self):
+    def get_len(self) -> int:
+        """:return: size of level"""
         return len(self.objs)
 
-    def make_header(self):
+    # VIEWING/EXPORTING ################################################################################################
+
+    def make_header(self) -> str:
+        """Convert level settings into a string header.
+        :return: header string"""
         txt = ("/\n"
                "/ circloO level\n"
                "/ Made with circloO Level Editor\n"
@@ -74,23 +102,20 @@ class Level:
 
         return txt
 
-    def to_str(self):
+    def to_str(self) -> str:
         text = []
         text.append(self.make_header())
-        for i in range(self.get_last_line()):
+
+        # Append each object in objs to level
+        for i in range(self.get_len()):
             text.append(self.objs[i].to_str(enumeration=True))
 
         return '\n'.join(text)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.to_str()
 
-    def __add__(self, other):
-        lvl = Level(self.segments, self.grav_scale, self.start_full)
-        lvl.objs = self.objs + other.objs
-        return lvl
-
-    def to_file(self, path):
+    def to_file(self, path: str):
         with open(path, 'w') as f:
             f.writelines(self.to_str())
         print(f"Successfully converted level to file under {path}")

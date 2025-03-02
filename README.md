@@ -1,13 +1,19 @@
 This is a work-in-progress repository of programs to make it easier for circloO level creators to create levels.
 
-Example codes for how to use each program are in each program's primary file (usually `main.py`)
+Example codes for how to use each program are in each program's primary file (usually in `main.py`)
 
 
 ## Current Programs
 
+<<<<<<< HEAD
+### circloO Helper
+Build levels using Python. Contains full documentation of levels and objects.
+
+=======
 ### circloO Helper
 Build levels in Python.
 
+>>>>>>> 03c03ae11492e66f8e9de99242979d73aba250bb
 ### Image converter
 Convert image files (most common types supported) into circloO objects that can be copy-pasted into a level file.
 
