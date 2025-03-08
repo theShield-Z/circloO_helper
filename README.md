@@ -14,8 +14,8 @@ Not everything is finished at the moment, but it's fully usable. Message me if t
 
 An example level-creation file is in `main.py`
 
-First, add the library to your project. You can do this (theoretically; I haven't done this before) by installing it via pip:\
-`pip install git+https://github.com/theShield-Z/circloO_helper/tree/circloO_helper_library.git`\
+First, add the library to your project. You can do this by installing it via pip:\
+`pip install git+https://github.com/theShield-Z/circloO_helper.git@circloO_helper_library`\
 Then import it to your Python file with\
 `import circloO_helper as ch`
 
