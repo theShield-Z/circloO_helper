@@ -1,13 +1,13 @@
-import math
+import math as _math
 
 
 def polar(r, theta, degrees=True):
     """Converts a point in polar coordinates to rectangular coordinates"""
     if degrees:  # Angle given in degrees, convert to radians.
-        theta = math.radians(theta)
+        theta = _math.radians(theta)
 
-    x = r * math.cos(theta)
-    y = r * math.sin(theta)
+    x = r * _math.cos(theta)
+    y = r * _math.sin(theta)
 
     # Zero precision error.
     if abs(x) < 0.000001:

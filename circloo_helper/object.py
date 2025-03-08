@@ -41,6 +41,11 @@ class Object:
     def add_modifier(self, modifier: any):
         self.modifiers.append(modifier)
 
+    def get_tag(self):
+        if self.attributes[0] == '/':
+            return ' '.join(self.attributes[0:2])
+        return self.attributes[0]
+
     # UTILITIES ########################################################################################################
 
     def copy(self):
@@ -59,3 +64,35 @@ class Object:
 
     def __str__(self) -> str:
         return self.to_str()
+
+    @staticmethod
+    def parse(txt: str):
+        lines: list = txt.splitlines()
+
+        if lines[0].startswith("music") or lines[0].startswith("recommend_sfx"):
+            # Throw away incorrect objects. This could probably be done better.
+            return
+
+        if lines[0][0] == '>':
+            # Object is a connection.
+            obj = Object(lines[2].split())  # Attributes on line 2 b/c connections are on 0 & 1
+            obj.set_connections([lines[0][2:], lines[1][2:]])
+
+            for i in range(3, len(lines)-1):
+                obj.add_modifier(lines[i])
+
+        else:
+            obj = Object(lines[0].split())
+
+            for i in range(1, len(lines)-1):
+                obj.add_modifier(lines[i])
+
+        return obj
+
+
+    """
+    tag att1 att2 att3\n
+    mod1\n
+    mod2\n
+    > line
+    """

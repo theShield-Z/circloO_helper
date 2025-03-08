@@ -1,5 +1,5 @@
-from random import randint
-from object import Object
+from random import randint as _randint
+from .object import Object as _O
 
 
 class Level:
@@ -9,7 +9,7 @@ class Level:
                  grav_scale: int | float = 1,
                  grav_dir: int | float = 270,
                  start_full: bool = False,
-                 color: int | float = randint(0, 255),
+                 color: int | float = _randint(0, 255),
                  music: tuple[int, int] = (0, 0),
                  rec_sfx: bool = False):
         """
@@ -35,13 +35,13 @@ class Level:
 
     # OBJECTS ##########################################################################################################
 
-    def add(self, obj: Object):
+    def add(self, obj: _O):
         """Insert a new object at the end of the level."""
         new_obj = obj.copy()
         new_obj.set_id(self.get_len())
         self.objs.append(new_obj)
 
-    def insert(self, line: int, obj: Object):
+    def insert(self, line: int, obj: _O):
         """Insert a new object at the given line."""
         new_obj = obj.copy()
         new_obj.set_id(line)
@@ -51,7 +51,7 @@ class Level:
         for obj_line in range(line + 1, self.get_len()):
             self.objs[obj_line].increment_id()
 
-    def replace(self, line: int, obj: Object) -> Object:
+    def replace(self, line: int, obj: _O) -> _O:
         """Replace an object at the given line with a new object.
         :return: previous object at the given line."""
         new_obj = obj.copy()
@@ -60,7 +60,7 @@ class Level:
         self.objs[line] = new_obj
         return old_obj
 
-    def remove(self, line: int) -> Object:
+    def remove(self, line: int) -> _O:
         """Remove an object at the given line.
         :return: removed object"""
         old_obj = self.objs.pop(line)
@@ -71,15 +71,24 @@ class Level:
 
         return old_obj
 
-    def object_at(self, line: int) -> Object:
+    def remove_all(self, tag: str):
+        """Remove all instances of a type of object in the level
+        :param tag: tag of the object to be removed"""
+        i = self.get_len() - 1
+        while i > 0:
+            if self.object_at(i).get_tag() == tag:
+                self.remove(i)
+            i -= 1
+
+    def object_at(self, line: int) -> _O:
         """:return: object at the given line"""
         return self.objs[line]
 
     def get_len(self) -> int:
-        """:return: size of level"""
+        """:return: number of objects in the level"""
         return len(self.objs)
 
-    # VIEWING/EXPORTING ################################################################################################
+    # OTHER ############################################################################################################
 
     def make_header(self) -> str:
         """Convert level settings into a string header.
@@ -103,6 +112,7 @@ class Level:
         return txt
 
     def to_str(self) -> str:
+        """Convert the level into a string"""
         text = []
         text.append(self.make_header())
 
@@ -116,6 +126,59 @@ class Level:
         return self.to_str()
 
     def to_file(self, path: str):
+        """Save the level to a .txt file"""
         with open(path, 'w') as f:
             f.writelines(self.to_str())
         print(f"Successfully converted level to file under {path}")
+
+    # def apply_to_all(self, func, tag, *params):
+    #     """Apply a function to all objects in the level.
+    #     Example: for every trigger, turn off its sound"""
+    #     raise NotImplementedError
+
+
+def parse(txt: str):
+    """Parse an existing level so you can edit it with this library."""
+    split_txt = txt.splitlines(keepends=True)
+    lvl = Level()
+
+    # Parse Header.
+    for line in split_txt:
+        if line.startswith("totalCircles"):
+            circles = line[13:].split()
+            lvl.segments = float(circles[0])
+            lvl.start_full = bool(circles[1])
+        if line.startswith("COLORS"):
+            lvl.color = int(line[7:])
+        if line.startswith("grav"):
+            gravity = line[5:].split()
+            lvl.grav_scale = float(gravity[0])
+            lvl.grav_dir = float(gravity[1])
+        if line.startswith("music"):
+            lvl.music = tuple(line[6:].split())
+        if line.startswith("recommend_sfx"):
+            lvl.rec_sfx = True
+        if line.startswith("<"):
+            # Don't loop through the rest of the level. could probably be done better -_-
+            break
+
+    # Split Objects.
+    obj_list = []
+    temp = ''
+    for line in split_txt:
+        if line.startswith('<') or line.startswith("grav") or line.startswith("music") or line == "recommend_sfx":
+            temp += line
+            obj_list.append(temp)
+            temp = ''
+        else:
+            temp += line
+
+    # Add Objects to Level.
+    for obj_txt in obj_list[1:]:  # index 0 is header
+        obj = _O.parse(obj_txt)
+        if obj is not None:
+            lvl.add(obj)
+
+    return lvl
+
+

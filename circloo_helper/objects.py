@@ -1,7 +1,7 @@
-from object import Object
+from .object import Object as _O
 
 
-class Player(Object):
+class Player(_O):
     def __init__(self, x_pos, y_pos, size=1, speed=1, density=1, bullet=True):
         """
         The circle that you control with left & right.
@@ -19,7 +19,7 @@ class Player(Object):
 # SOLID OBJECTS ########################################################################################################
 
 
-class Circle(Object):
+class Circle(_O):
     def __init__(self, x_pos, y_pos, radius, attractor=0):
         """
         Immovable Circle
@@ -33,7 +33,7 @@ class Circle(Object):
             self.add_modifier(f"attr {attractor}")
 
 
-class Rectangle(Object):
+class Rectangle(_O):
     def __init__(self, x_pos, y_pos, width, height, rotation=0):
         """
         Immovable Rectangle
@@ -46,7 +46,7 @@ class Rectangle(Object):
         super().__init__(['b', x_pos, y_pos, width, height, rotation])
 
 
-class Triangle(Object):
+class Triangle(_O):
     def __init__(self, x1, y1, x2, y2, x3, y3):
         """
         Immovable Triangle
@@ -60,7 +60,7 @@ class Triangle(Object):
         super().__init__(['t', x1, y1, x2, y2, x3, y3])
 
 
-class Line(Object):
+class Line(_O):
     def __init__(self, x1, y1, x2, y2, thickness=3):
         """
         Solid Line
@@ -73,7 +73,7 @@ class Line(Object):
         super().__init__(['l_at', x1, y1, x2, y2, thickness])
 
 
-class Arc(Object):
+class Arc(_O):
     """Arcs are confusing as hell. No support for 3-point arcs atm."""
     def __init__(self, x_pos, y_pos, start_pos, end_pos, radius, ctr_x=-1, ctr_y=-1, thickness=3):
         """
@@ -91,7 +91,7 @@ class Arc(Object):
         super().__init__(['/ LE_ARC_DESCRIPTION', x_pos, y_pos, start_pos, end_pos, radius, ctr_x, ctr_y, 2, thickness])
 
 
-class Curve(Object):
+class Curve(_O):
     def __init__(self, start_x, start_y, ctr1_x, ctr1_y, ctr2_x, ctr2_y, end_x, end_y, thickness=3, resolution=100):
         """
         Bézier Curve
@@ -109,7 +109,7 @@ class Curve(Object):
         super().__init__(['curve', start_x, start_y, ctr1_x, ctr1_y, ctr2_x, ctr2_y, end_x, end_y, thickness, resolution])
 
 
-class GrowingCircle(Object):
+class GrowingCircle(_O):
     def __init__(self, x_pos, y_pos, radius, keep_pos=False, attractor=0):
         """
         Solid circle that grows when a collectable is collected
@@ -126,7 +126,7 @@ class GrowingCircle(Object):
             self.add_modifier(f"attr {attractor}")
 
 
-class GrowingRectangle(Object):
+class GrowingRectangle(_O):
     def __init__(self, x_pos, y_pos, width, height, rotation=0, keep_pos=False):
         """
         Solid rectangle that grows when a collectable is collected
@@ -145,7 +145,7 @@ class GrowingRectangle(Object):
 #   side note: 'movable' is spelled wrong in the whole game, so I will spell it wrong here too lol
 
 
-class MoveableCircle(Object):
+class MoveableCircle(_O):
     def __init__(self, x_pos, y_pos, radius, density=1, damping=0, wheel_image=False, attractor=0):
         """
         Movable Circle
@@ -164,7 +164,7 @@ class MoveableCircle(Object):
             self.add_modifier(f"attr {attractor}")
 
 
-class MoveableRectangle(Object):
+class MoveableRectangle(_O):
     def __init__(self, x_pos, y_pos, width, height, density=1, damping=-1, rotation=0, fix_rotation=False):
         """
         Movable Rectangle
@@ -181,7 +181,7 @@ class MoveableRectangle(Object):
             self.add_modifier("fixrot")
 
 
-class MoveableTriangle(Object):
+class MoveableTriangle(_O):
     def __init__(self, x1, y1, x2, y2, x3, y3, density=1, fix_rotation=False):
         """
         Movable Triangle
@@ -201,7 +201,7 @@ class MoveableTriangle(Object):
 # SPECIAL OBJECTS ######################################################################################################
 
 
-class RotatableRectangle(Object):
+class RotatableRectangle(_O):
     def __init__(self, x_pos, y_pos, width, height, rotation=0, density=1, damping=0):
         """
         Rotatable Rectangle
@@ -216,7 +216,7 @@ class RotatableRectangle(Object):
         super().__init__(['rr', x_pos, y_pos, width, height, rotation, density, damping])
 
 
-class RotatableCircle(Object):
+class RotatableCircle(_O):
     def __init__(self, x_pos, y_pos, radius, motor_speed=0, torque=100):
         """
         Rotatable Circle
@@ -229,7 +229,7 @@ class RotatableCircle(Object):
         super().__init__(['rc', x_pos, y_pos, radius, motor_speed, torque])
 
 
-class SpringyRectangle(Object):
+class SpringyRectangle(_O):
     def __init__(self, x_pos, y_pos, width, height, rotation=0, density=1, frequency=2, damping=.3, fulcrum_offset=0, fulcrum_radius=10):
         """
         Rectangle that returns to a resting position of 0 degrees when rotated
@@ -247,7 +247,7 @@ class SpringyRectangle(Object):
         super().__init__(['wr', x_pos, y_pos, width, height, rotation, density, frequency, damping, fulcrum_offset, fulcrum_radius])
 
 
-class BallGenerator(Object):
+class BallGenerator(_O):
     def __init__(self, x_pos, y_pos, radius, density=1, disappear_after=5, wait_between=1, init_delay=0, damping=0, no_fade=False, start_off=False):
         """
         Generates movable circles at timed intervals.
@@ -272,7 +272,7 @@ class BallGenerator(Object):
             self.add_modifier("off")
 
 
-class RectangleGenerator(Object):
+class RectangleGenerator(_O):
     def __init__(self, x_pos, y_pos, width, height, density=1, rotation=0, damping=0, disappear_after=5,
                  wait_between=1, init_delay=0, fix_rotation=False, no_fade=False, start_off=False):
         """
@@ -301,7 +301,7 @@ class RectangleGenerator(Object):
             self.add_modifier('off')
 
 
-class Portal(Object):
+class Portal(_O):
     def __init__(self, portal_x, portal_y, target_x, target_y, deactivate_circle=7, min_time=0):
         # The function of the extra '1' is unclear.
         super().__init__(['portal', portal_x, portal_y, target_x, target_y, 1, deactivate_circle, min_time])
@@ -309,7 +309,7 @@ class Portal(Object):
 # CONNECTIONS ##########################################################################################################
 
 
-class Glue(Object):
+class Glue(_O):
     def __init__(self, obj1, obj2):
         """
         Glues two movable objects together
@@ -319,7 +319,7 @@ class Glue(Object):
         super().__init__(['/ GLUE', obj1, obj2])
 
 
-class Rope(Object):
+class Rope(_O):
     def __init__(self, obj1, obj2, offset1_x=0, offset1_y=0, offset2_x=0, offset2_y=0, max_length=0):
         """
         Connect two objects with the ability to move semi-independently
@@ -335,7 +335,20 @@ class Rope(Object):
         self.set_connections([obj1, obj2])
 
 
-class Pulley(Object):
+class PortalRope(_O):
+    """I don't know why this is a separate object?"""
+    def __init__(self, obj1, obj2, also_move_destination=False):
+        """
+        A rope connected between a portal and another object
+        :param obj1: id of portal
+        :param obj2: id of other object
+        :param also_move_destination: if True, also moves destination of portal; default is False
+        """
+        super().__init__(['fd', int(also_move_destination)])
+        self.set_connections([obj1, obj2])
+
+
+class Pulley(_O):
     def __init__(self, obj1, obj2, pulley1_x=0, pulley1_y=-100, pulley2_x=0, pulley2_y=-100,
                  offset1_x=0, offset1_y=0, offset2_x=0, offset2_y=0, ratio=1, unlock_movement=False):
         """
@@ -360,7 +373,7 @@ class Pulley(Object):
             self.add_modifier("p_free_hmovement")
 
 
-class Hinge(Object):
+class Hinge(_O):
     def __init__(self, obj1, obj2, offset_x=0, offset_y=0, draw_connection_line=False, enable_collisions=False, motor_speed=0, torque=100):
         """
         Connect two objects rigidly while allowing rotation
@@ -377,7 +390,7 @@ class Hinge(Object):
         self.set_connections([obj1, obj2])
 
 
-class Slider(Object):
+class Slider(_O):
     def __init__(self, obj1, obj2, offset_x=0, offset_y=0):
         """
         Connect objects rigidly with the ability to move in a straight line between each other
@@ -391,7 +404,7 @@ class Slider(Object):
         self.set_connections([obj1, obj2])
 
 
-class SpecialConnection(Object):
+class SpecialConnection(_O):
     def __init__(self, collectable, target, action):
         """
         Perform an action to a target object upon the collection of a collectable
@@ -413,7 +426,7 @@ class SpecialConnection(Object):
 # COLLECTABLES #########################################################################################################
 
 
-class Collectable(Object):
+class Collectable(_O):
     def __init__(self, x_pos, y_pos, appear_at_segment=1,
                  part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False):
         """
@@ -478,7 +491,7 @@ class GravityCollectable(Collectable):
         :param collect_from_object: If True, changes collectable to only be collected upon collision with a non-player object; default is False
         """
         tag = 'im' if collect_from_object else 'ig'
-        Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, grav_dir, grav_strength])
+        _O.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, grav_dir, grav_strength])
         self.init_modifiers(part_of_segment, zoom, is_trigger)
 
 
@@ -497,7 +510,7 @@ class SizeCollectable(Collectable):
         :param collect_from_object: If True, changes collectable to only be collected upon collision with a non-player object; default is False
         """
         tag = 'iso' if collect_from_object else 'is'
-        Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, size])
+        _O.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, size])
         self.init_modifiers(part_of_segment, zoom, is_trigger)
 
 
@@ -515,11 +528,11 @@ class DisconnectCollectable(Collectable):
         :param collect_from_object: If True, changes collectable to only be collected upon collision with a non-player object; default is False
         """
         tag = 'irbo' if collect_from_object else 'irb'
-        Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment])
+        _O.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment])
         self.init_modifiers(part_of_segment, zoom, is_trigger)
 
 
-class SpeedClt(Collectable):
+class SpeedCollectable(Collectable):
     def __init__(self, x_pos, y_pos, appear_at_segment=1, speed=1,
                  part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False):
         """
@@ -534,11 +547,11 @@ class SpeedClt(Collectable):
         :param collect_from_object: If True, changes collectable to only be collected upon collision with a non-player object; default is False
         """
         tag = 'ipso' if collect_from_object else 'ips'
-        Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, speed])
+        _O.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, speed])
         self.init_modifiers(part_of_segment, zoom, is_trigger)
 
 
-class SpecialClt(Collectable):
+class SpecialCollectable(Collectable):
     def __init__(self, x_pos, y_pos, appear_at_segment=1,
                  part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False):
         """
@@ -552,6 +565,6 @@ class SpecialClt(Collectable):
         :param collect_from_object: If True, changes collectable to only be collected upon collision with a non-player object; default is False
         """
         tag = 'ispo' if collect_from_object else 'isp'
-        Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment])
+        _O.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment])
         self.init_modifiers(part_of_segment, zoom, is_trigger)
 
