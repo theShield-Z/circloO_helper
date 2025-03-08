@@ -6,7 +6,7 @@ Example codes for how to use each program are in each program's primary file (us
 ## Current Programs
 
 ### circloO Helper
-Build levels in Python.
+Build levels in Python. Install it from the circloO_helper_library branch.
 
 ### Image converter
 Convert image files (most common types supported) into circloO objects that can be copy-pasted into a level file.

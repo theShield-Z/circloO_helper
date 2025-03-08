@@ -14,7 +14,7 @@ Not everything is finished at the moment, but it's fully usable. Message me if t
 
 An example level-creation file is in `main.py`
 
-First, add the library to your project. You can do this either by copying all `.py` files to your project's folder (you may have to mess with some import statements, im too tired to fix it rn -_-), or preferably by installing the standalone library repository on my profile via pip.
+First, add the library to your project. You can do this either by copying all `.py` files to your project's folder (you may have to mess with some import statements, im too tired to fix it rn -_-), or preferably by installing the standalone library from the standalone circloO_helper_library branch via pip.
 
 Create a level:
 ```
