@@ -106,4 +106,6 @@ You can also change the size of the text using `size` and the spacing of the let
 
 - make mechanisms more robust and easier to use.
 - improve examples in `main.py` to reflect the most recent version.
+- Add options to the pip installer (i.e., if you know you won't use the video converter, you don't need to install opencv)
 - preexisting levels with connections don't always parse properly.
+- It seems like the dependencies might not be importing correctly. This is a major bug, but for now, you can fix this by just installing all of them yourself (there's only like 3 nonstandard ones: pillow, matplotlib, and opencv)
