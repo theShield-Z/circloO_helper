@@ -35,11 +35,22 @@ class Level:
 
     # OBJECTS ##########################################################################################################
 
-    def add(self, obj: _O):
+    def add(self, obj: _O) -> int:
         """Insert a new object at the end of the level."""
-        new_obj = obj.copy()
-        new_obj.set_id(self.get_len())
-        self.objs.append(new_obj)
+        if isinstance(obj, list):
+            self._add_all(obj)
+        elif isinstance(obj, _O):
+            new_obj = obj.copy()
+            new_obj.set_id(self.get_len())
+            self.objs.append(new_obj)
+            return new_obj.get_id()
+        else:
+            raise TypeError(f"Can only add a ch Object or list of ch Objects to a Level")
+
+    def _add_all(self, objs: list[_O, ...]):
+        """Add all objects of a list."""
+        for obj in objs:
+            self.add(obj)
 
     def insert(self, line: int, obj: _O):
         """Insert a new object at the given line."""
@@ -90,7 +101,7 @@ class Level:
 
     # OTHER ############################################################################################################
 
-    def make_header(self) -> str:
+    def _make_header(self) -> str:
         """Convert level settings into a string header.
         :return: header string"""
         txt = ("/\n"
@@ -114,7 +125,7 @@ class Level:
     def to_str(self) -> str:
         """Convert the level into a string"""
         text = []
-        text.append(self.make_header())
+        text.append(self._make_header())
 
         # Append each object in objs to level
         for i in range(self.get_len()):
@@ -131,14 +142,16 @@ class Level:
             f.writelines(self.to_str())
         print(f"Successfully converted level to file under {path}")
 
-    # def apply_to_all(self, func, tag, *params):
-    #     """Apply a function to all objects in the level.
-    #     Example: for every trigger, turn off its sound"""
-    #     raise NotImplementedError
+    def copy(self):
+        """Return a copy of the level."""
+        new_level = Level(self.segments, self.grav_scale, self.grav_dir, self.start_full, self.color, self.music, self.rec_sfx)
+        for obj in self.objs:
+            new_level.add(obj.copy())
+        return new_level
 
 
 def parse(txt: str):
-    """Parse an existing level so you can edit it with this library."""
+    """Parse an existing level so that you can edit it with this library."""
     split_txt = txt.splitlines(keepends=True)
     lvl = Level()
 
@@ -148,18 +161,23 @@ def parse(txt: str):
             circles = line[13:].split()
             lvl.segments = float(circles[0])
             lvl.start_full = bool(circles[1])
-        if line.startswith("COLORS"):
+
+        elif line.startswith("COLORS"):
             lvl.color = int(line[7:])
-        if line.startswith("grav"):
+
+        elif line.startswith("grav"):
             gravity = line[5:].split()
             lvl.grav_scale = float(gravity[0])
             lvl.grav_dir = float(gravity[1])
-        if line.startswith("music"):
+
+        elif line.startswith("music"):
             lvl.music = tuple(line[6:].split())
-        if line.startswith("recommend_sfx"):
+
+        elif line.startswith("recommend_sfx"):
             lvl.rec_sfx = True
-        if line.startswith("<"):
-            # Don't loop through the rest of the level. could probably be done better -_-
+
+        elif line.startswith("<"):
+            # Don't loop through the rest of the level.
             break
 
     # Split Objects.

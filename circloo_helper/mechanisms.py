@@ -11,8 +11,7 @@ class Mechanism:
         self.start_id = start_id
 
     def add_to(self, level: _L):
-        for obj in self.objs:
-            level.add(obj)
+        level.add(self.objs)
 
 
 class LeftRightDetector(Mechanism):
@@ -87,3 +86,37 @@ class RingCounter(Mechanism):
 
         super().__init__(objs, start_id)
 
+
+class FlipFlop(Mechanism):
+    def __init__(self, x_pos, y_pos, in_x, in_y, start_id):
+        left_trigger = _o.SpecialCollectable(x_pos-12, y_pos-12, is_trigger=True, collect_from_object=True)
+        right_trigger = _o.SpecialCollectable(x_pos+13, y_pos+13, is_trigger=True, collect_from_object=True)
+        left_gen = _o.BallGenerator(x_pos-12, y_pos-12, 10, 0, 0, 9999, no_fade=True)
+        right_gen = _o.BallGenerator(x_pos+13, y_pos+13, 10, 0, 0, 9999, start_off=True, no_fade=True)
+        in_trigger = _o.SpecialCollectable(in_x, in_y, is_trigger=True, collect_from_object=True)
+
+        dest_1 = _o.SpecialConnection(start_id, start_id+3, 'Destroy')
+        dest_2 = _o.SpecialConnection(start_id+1, start_id+2, 'Destroy')
+        now_1 = _o.SpecialConnection(start_id, start_id+2, 'NowIf')
+        now_2 = _o.SpecialConnection(start_id+1, start_id+3, 'NowIf')
+        in_1 = _o.SpecialConnection(start_id+4, start_id+2, 'NowIf')
+        in_2 = _o.SpecialConnection(start_id+4, start_id+3, 'NowIf')
+
+        left_trigger.mute()
+        right_trigger.mute()
+        in_trigger.mute()
+
+        objs = [left_trigger, right_trigger, left_gen, right_gen, in_trigger, dest_1, dest_2, now_1, now_2, in_1, in_2]
+        super().__init__(objs, start_id)
+
+
+class Sweeper(Mechanism):
+    def __init__(self, x_pos, y_pos, start_id, speed=1):
+        mover = _o.MoveableRectangle(x_pos, x_pos, 15, 15, density=.01, fix_rotation=True)
+        solid = _o.Rectangle(x_pos-30, y_pos, 5, 5)
+        generator = _o.RectangleGenerator(x_pos-50, y_pos, 5, 5, density=50, disappear_after=.02, wait_between=0, fix_rotation=True)
+        rope = _o.Rope(start_id+1, start_id+2, max_length=-speed)
+        hinge = _o.Hinge(start_id, start_id+2)
+
+        objs = [mover, solid, generator, rope, hinge]
+        super().__init__(objs, start_id)

@@ -36,7 +36,10 @@ class Object:
         self.attributes = attributes
 
     def set_connections(self, connections: list[int, int]):
-        self.connections = connections
+        if len(connections) == 2:
+            self.connections = connections
+        else:
+            raise ConnectionError("There must be exactly two objects for a connection.")
 
     def add_modifier(self, modifier: any):
         self.modifiers.append(modifier)
@@ -46,13 +49,19 @@ class Object:
             return ' '.join(self.attributes[0:2])
         return self.attributes[0]
 
+    def set_position(self, x: int | float, y: int | float):
+        """Changes the position of the object. Note that using this on objects without a position (connections, etc.)
+        or with multiple positions (triangles, lines, etc.) may result in error."""
+        self.attributes[1] = x
+        self.attributes[2] = y
+
     # UTILITIES ########################################################################################################
 
     def copy(self):
-        return Object(self.attributes, self.modifiers, self.connections, self.id)
+        return Object(self.attributes.copy(), self.modifiers.copy(), self.connections.copy(), self.id)
 
     def to_str(self, enumeration: bool = False) -> str:
-        primary = ' '.join(map(str, self.attributes))  # map() applies a function to every item of an iterable
+        primary = ' '.join(map(str, self.attributes))
         secondary = ''.join(['\n' + str(m) for m in self.modifiers])  # New lines included here.
         connstr = ""
         if len(self.connections) > 0:
@@ -70,7 +79,7 @@ class Object:
         lines: list = txt.splitlines()
 
         if lines[0].startswith("music") or lines[0].startswith("recommend_sfx"):
-            # Throw away incorrect objects. This could probably be done better.
+            # Line incorrectly labeled as an object. Throw away.
             return
 
         if lines[0][0] == '>':
@@ -88,11 +97,3 @@ class Object:
                 obj.add_modifier(lines[i])
 
         return obj
-
-
-    """
-    tag att1 att2 att3\n
-    mod1\n
-    mod2\n
-    > line
-    """

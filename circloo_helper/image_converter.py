@@ -1,16 +1,15 @@
 """Convert images into circloO objects."""
 
-import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
-import numba
-import subprocess
+import numpy as _np
+from PIL import Image as _Image
+import matplotlib.pyplot as _plt
+from .objects import Rectangle as _Rectangle
 
 
 # MAIN FUNCTIONS #######################################################################################################
 
 def image_to_circloo(img_path, downsample_factor,
-                     start_x, start_y, size=1, start_line=-1,
+                     start_x, start_y, size=1,
                      threshold=.5, channel_weights=(1, 1, 1),
                      reduce_objects=True, show_img=True):
     """
@@ -20,38 +19,36 @@ def image_to_circloo(img_path, downsample_factor,
     :param start_x:             Initial x-coordinate (left)
     :param start_y:             Initial y-coordinate (top)
     :param size:                Size of each pixel; default is 1
-    :param start_line:          Line enumeration start; set negative to turn off; default is -1
     :param threshold:           Threshold for grayscale conversion; default is 0.5
     :param channel_weights:     Weights for RGB channels; default is (1, 1, 1)
     :param reduce_objects:      If True, uses optimization algorithms--HIGHLY RECOMMENDED; default is True
     :param show_img:            If True, displays the processed image; default is True
-    :return:                String of circloO objects (w/o header)
+    :return:                List of circloO objects
     """
     # Open Image.
-    img = Image.open(f"{img_path}")
+    img = _Image.open(f"{img_path}")
 
     # Convert to numpy array.
-    data = np.array(img).astype(np.float32) / 255   # normalize values as floats b/w 0 & 1
+    data = _np.array(img).astype(_np.float32) / 255   # normalize values as floats b/w 0 & 1
     if len(data.shape) == 2:    # add new channel if B&W image to preserve algorithms
-        data = data[:, :, np.newaxis]
+        data = data[:, :, _np.newaxis]
 
     data_smaller = downsample(data, downsample_factor)
     data_adjusted = floyd_steinberg(data_smaller)
 
     if show_img:
-        plt.imshow(data_adjusted[:, :, 0], cmap='Greys_r')
-        plt.show()
+        _plt.imshow(data_adjusted[:, :, 0], cmap='Greys_r')
+        _plt.show()
 
     if reduce_objects:
         data_single_channel = reduce_channels(data_adjusted, threshold=threshold, channel_weights=channel_weights)
         data_reduced = greedy_decomposition(data_single_channel)
-        return reduced_build(data_reduced, start_x=start_x, start_y=start_y, size=size, start_line=start_line)
+        return reduced_build(data_reduced, start_x=start_x, start_y=start_y, size=size)
     else:
         return build(data_adjusted, threshold=threshold, channel_weights=channel_weights,
-                     start_x=start_x, start_y=start_y, size=size, start_line=start_line)
+                     start_x=start_x, start_y=start_y, size=size)
 
 
-@numba.jit("f4[:,:,:](f4[:,:,:])", nopython=True, nogil=True)
 def floyd_steinberg(image):
     """Floyd-Steinberg dithering algorithm, adjusted to give more contrast.
     https://research.cs.wisc.edu/graphics/Courses/559-s2004/docs/floyd-steinberg.pdf"""
@@ -73,13 +70,13 @@ def floyd_steinberg(image):
     return image
 
 
-def downsample(image: np.array, factor: int):
+def downsample(image: _np.array, factor: int):
     """Reduce image size by factor
     **USE THIS--DO NOT CRASH YOUR EDITOR"""
     return image[::factor, ::factor, :]
 
 
-def build(arr: np.array, threshold=.5, channel_weights=(1, 1, 1), start_x=1500, start_y=1500, size=1, start_line=-1):
+def build(arr: _np.array, threshold=.5, channel_weights=(1, 1, 1), start_x=1500, start_y=1500, size=1):
     """
     Convert image array into circloO objects.
     :param arr: Image
@@ -88,45 +85,38 @@ def build(arr: np.array, threshold=.5, channel_weights=(1, 1, 1), start_x=1500, 
     :param start_x: Initial x value (left)
     :param start_y: Initial y value (top)
     :param size: Size of each pixel
-    :param start_line: Line enumeration; -1 to turn off
     :return: String of circloO objects (w/o header)
     """
-    avg = np.dot(arr[:, :, :3], channel_weights) / sum(channel_weights)
-    rows, cols = np.where(avg < threshold)
+    avg = _np.dot(arr[:, :, :3], channel_weights) / sum(channel_weights)
+    rows, cols = _np.where(avg < threshold)
 
-    text = []
-    cur_line = 0
+    objs = []
 
     for i, j in zip(rows, cols):
         xpos = j * 2 * size + start_x
         ypos = i * 2 * size + start_y
-        text.append(f"b {xpos} {ypos} {size} {size} 0\n")
+        objs.append(_Rectangle(xpos, ypos, size, size))
 
-        if start_line >= 0:
-            text.append(f"< {cur_line}\n")
-            cur_line += 1
-
-    return ''.join(text)
+    return objs
 
 
 # OPTIMIZATION #########################################################################################################
 
-def reduce_channels(arr: np.array, threshold=.5, channel_weights=(1, 1, 1)):
+def reduce_channels(arr: _np.array, threshold=.5, channel_weights=(1, 1, 1)):
     """Convert rgb binary image into greyscale (with an extra channel for greedy_decomposition() function)."""
-    avg = np.dot(arr[:, :, :3], channel_weights) / sum(channel_weights)
-    binary_image = (avg <= threshold).astype(np.float32)
+    avg = _np.dot(arr[:, :, :3], channel_weights) / sum(channel_weights)
+    binary_image = (avg <= threshold).astype(_np.float32)
 
-    new_arr = np.zeros((arr.shape[0], arr.shape[1], 2), dtype=np.float32)
+    new_arr = _np.zeros((arr.shape[0], arr.shape[1], 2), dtype=_np.float32)
     new_arr[:, :, 0] = binary_image
     return new_arr
 
 
-def reduced_build(arr: np.array, start_x=1500, start_y=1500, size=1, start_line=-1):
+def reduced_build(arr: _np.array, start_x=1500, start_y=1500, size=1):
     """Convert a reduced image array into a string of circloO objects."""
-    text = []
+    objs = []
     xpos = 0
     ypos = 0
-    cur_line = 0
 
     for i in range(arr.shape[0]):
         for j in range(arr.shape[1]):
@@ -134,21 +124,17 @@ def reduced_build(arr: np.array, start_x=1500, start_y=1500, size=1, start_line=
             y_factor = arr[i, j, 1]
 
             if x_factor > 0:
-                text.append(f"b {xpos + start_x + size * x_factor} {ypos + start_y + size * y_factor} {size * x_factor} {size * y_factor} 0\n")
-
-                if start_line >= 0:
-                    text.append(f"< {cur_line}\n")
-                    cur_line += 1
+                objs.append(_Rectangle(xpos + start_x + size * x_factor, ypos + start_y + size * y_factor, size * x_factor, size * y_factor))
 
             xpos += 2 * size
 
         xpos = 0
         ypos += 2 * size
 
-    return ''.join(text)
+    return objs
 
 
-def greedy_decomposition(arr: np.array):
+def greedy_decomposition(arr: _np.array):
     """Reduce a binary image array into an array corresponding to the length & width of each pixel."""
 
     # Reduce pixels by merging side-to-side length.
@@ -198,36 +184,3 @@ def greedy_decomposition(arr: np.array):
                     check_val = arr[point[0], point[1], 0]
                     arr[i, j, 1] = 1
     return arr
-
-
-# FILES & ADB ##########################################################################################################
-
-def text_to_file(output_path, text):
-    """Convert a string of text into a file."""
-    f = open(output_path, 'w')
-    f.writelines(text)
-
-
-def push_to_android(file_path, destination='/sdcard'):
-    """
-    Pushes a file to an Android device using ADB.
-    """
-    try:
-        command = ['adb', 'push', file_path, destination]
-
-        result = subprocess.run(command, capture_output=True, text=True)
-
-        if result.returncode == 0:
-            print(f"File successfully pushed to {destination} folder.")
-        else:
-            print(f"Error pushing file: {result.stderr}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-
-# EXAMPLE CODE #########################################################################################################
-
-txt = image_to_circloo("mona_lisa.webp", 1, 1500, 1500, start_line=0)
-print(txt)
-text_to_file("circloO_image.txt", txt)
-# push_to_android("circloO_image.txt", destination='/sdcard')   # ADB should be installed before use
