@@ -1,4 +1,4 @@
-from .level import Level as _L
+from .level import Level as _Level
 import circloo_helper.objects as _o
 
 
@@ -10,7 +10,7 @@ class Mechanism:
         self.objs = objs
         self.start_id = start_id
 
-    def add_to(self, level: _L):
+    def add_to(self, level: _Level):
         level.add(self.objs)
 
 

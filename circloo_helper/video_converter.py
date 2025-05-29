@@ -46,7 +46,7 @@ DOTTED_LINE_DITHER_8X8 = (1 / 64) * _np.array([
 def video_to_circloo(video_path: str, frame_size: tuple[int, int], frame_skip: int, fps: float,
                      start_x: float, start_y: float, size: float = 1,
                      threshold: float = .5, channel_weights: tuple[float, float, float] = (1, 1, 1),
-                     dither_pattern: _np.array = BAYER_MATRIX_8X8, start_off: bool = False,
+                     dither_pattern: _np.array = LINE_DITHER_8X8, start_off: bool = False,
                      show_img: bool = True, wait_key: int = 5):
     """
     Converts a video into circloO objects via dithering & grayscale conversion.
@@ -114,7 +114,7 @@ def video_to_circloo(video_path: str, frame_size: tuple[int, int], frame_skip: i
 
 # IMAGE PROCESSING #####################################################################################################
 
-def ordered_dither(image: _np.array, pattern: _np.array = LINE_DITHER_8X8):
+def ordered_dither(image: _np.array, pattern: _np.array = BAYER_MATRIX_8X8):
     """Ordered Dithering using pattern matrix."""
 
     if pattern is None:

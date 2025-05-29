@@ -20,15 +20,15 @@ collectable = ch.objects.Collectable(1500, 1400, collect_from_object=True, is_tr
 collectable.set_sound('house', 0)   # Change collectable's sfx to a chime
 lvl.add(collectable)
 
-lvl.to_file("example_level.txt")
+lvl.to_file("examples/example_level.txt")
 
 
 # Parsing #
-with open("parse_example.txt", 'r') as f:
+with open("examples/parse_example.txt", 'r') as f:
     lvl = ch.parse(f.read())
     lvl.remove_all('tmc')   # Remove all circle generators
     lvl.add(ch.objects.Collectable(1830, 1630))
-    lvl.to_file("fixed_level.txt")
+    lvl.to_file("examples/fixed_level.txt")
 
 
 # Mechanisms #
@@ -48,4 +48,4 @@ lvl.add(trigger_1)
 lvl.add(generator_1)
 lvl.add(trig_gen_conn)
 
-lvl.to_file("mechanism_level.txt")
+lvl.to_file("examples/mechanism_level.txt")

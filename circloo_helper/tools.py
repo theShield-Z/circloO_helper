@@ -1,6 +1,6 @@
 import math as _math
 import subprocess as _subprocess
-from .level import Level as _L
+from .level import Level as _Level
 
 
 def polar(r, theta, start_x=1500, start_y=1500, in_degrees=True):
@@ -41,6 +41,6 @@ def push_to_android(file_path, destination='/sdcard'):
         print(f"An error has occurred: {e}")
 
 
-def combine(level_1: _L, level_2: _L):
+def combine(level_1: _Level, level_2: _Level):
     new_level = level_1.copy()
     new_level.add(level_2.objs)

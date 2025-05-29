@@ -3,7 +3,7 @@ from .objects import Rectangle as _R
 
 def build(arr: _np.array, start_x=1500, start_y=1500, size=1):
     """
-    Convert image array into circloO objects.
+    Convert a binary array into circloO objects.
     :param arr: Binary array
     :param start_x: Initial x value (left)
     :param start_y: Initial y value (top)
