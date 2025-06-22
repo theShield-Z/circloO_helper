@@ -1,23 +1,31 @@
 This is a work-in-progress repository of programs to make it easier for circloO level creators to create levels.
 
-Not everything is finished at the moment, but it should fully usable. Message me if there are any bugs (current version is not fully tested).
+Once this is merged to the main branch (I haven't fully vetted everything yet), this will be the first fully complete version of the package!
 
 # Features
 
 - Creation and editing of levels and objects
 - Full documentation of level and object attributes
-- Video, Image, and Text conversion!
+- Video, Image (vector* & rastor), and Text conversion!
 - Parse and edit existing levels
-- Mechanisms
+- Group objects together*
+- Plot polygons* (and convert images to plottable polygons!)
 - Several miscellaneous tools
+
+*new to this version
 
 # Usage
 
 Examples for how to use the library are in `main.py`.
 
-First, add the library to your project. You can do this either by copying all the files to your project's folder, or preferably via pip:
-`pip install git+https://github.com/theShield-Z/circloO_helper.git`
+First, add the library to your project. This is most easily done via pip:
+```
+pip install git+https://github.com/theShield-Z/circloO_helper.git@test
+```
+Then, `import circloo_helper as ch` to your program.
 
+
+## Basic Functionality
 
 Create a level:
 ```
@@ -26,12 +34,8 @@ lvl = ch.Level()
 
 Create objects with `ch.objects.[object]`:
 ```
+# Create a player object.
 obj_1 = ch.objects.Player(1500, 1500)
-
-# or, if you know the syntax of each object and want more control:
-obj_2 = ch.Object(['y', 1500, 1500, 1, 1, 1])
-
-# Both create a Player object at the center of the screen.
 ```
 
 Add an object to a level:
@@ -56,14 +60,14 @@ lvl.to_file("my_circloO_level.txt")
 
 ## Parsing
 
-You can work with an existing level using the `parse` function:
+You can work with an existing level using the `parse()` function:
 ```
 with open("my_circloO_level.txt", 'r') as file:
     lvl = ch.parse(file.read())
 ```
 Then work with it just like you would a level created from scratch.
 
-## Mechanisms
+## Mechanisms (soon to be replaced fully with object groups)
 
 circloO Helper also supports mechanisms: groups of objects that perform a specific function. These may not all work correctly depending on your setup—it's on my to-do list.
 Create a mechanism, then add it to your level:
@@ -104,7 +108,8 @@ You can also change the size of the text using `size` and the spacing of the let
 
 # To Do / Known Bugs
 
-- make mechanisms more robust and easier to use.
+- fully deprecate mechanisms in favor of object groups
+- add a defaults module that contains example levels and former mechanisms
 - improve examples in `main.py` to reflect the most recent version.
-- Add options to the pip installer (e.g., if you know you won't use the video converter, you don't need to install opencv)
-- preexisting levels with connections don't always parse properly.
+- update the README with new features for this version
+- preexisting levels with connections don't always parse properly... for *some* reason??

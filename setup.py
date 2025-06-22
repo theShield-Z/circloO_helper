@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='circloo_helper',
-    version='0.0.25',
+    version='1.0.0',
     packages=find_packages(),
     description='Build and edit circloO levels using Python',
     author='Shield Z',
@@ -12,5 +12,12 @@ setup(
         'matplotlib~=3.10.1',
         'pillow~=11.1.0',
         'opencv-python~=4.11.0.86',
+        'svgpathtools-light~=1.6.2',
     ],
+    # Unsure about making these optional installs
+    # extras_require={
+    #     "full": [...]
+    #     "image_converter": [...]
+    #     "video_converter": [...]
+    # }
 )

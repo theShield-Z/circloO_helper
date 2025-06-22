@@ -1,5 +1,7 @@
 from random import randint as _randint
-from .object import Object as _O
+from .object import Object as _Object
+import circloo_helper.objects as _objects
+from .object_groups import ObjectGroup as _ObjectGroup
 
 
 class Level:
@@ -29,49 +31,55 @@ class Level:
         self.grav_scale = grav_scale
         self.grav_dir = grav_dir
         self.start_full = start_full
-        self.color = color
+        self.color = color % 256
         self.music = music
         self.rec_sfx = rec_sfx
 
     # OBJECTS ##########################################################################################################
 
-    def add(self, obj: _O) -> int:
+    def add(self, obj: _Object | _ObjectGroup | list) -> int:
         """Insert a new object at the end of the level."""
         if isinstance(obj, list):
             self._add_all(obj)
-        elif isinstance(obj, _O):
-            new_obj = obj.copy()
-            new_obj.set_id(self.get_len())
-            self.objs.append(new_obj)
-            return new_obj.get_id()
+        elif isinstance(obj, _Object):
+            if obj.get_id() == -1:      # Take note that this could cause bugs under very specific circumstances.
+                obj.set_id(self.get_len())
+                self.objs.append(obj)
+                return obj.get_id()
+            else:
+                # Object already has id, so is already in the level. Add a copy instead.
+                new_obj = obj.copy()
+                new_obj.set_id(self.get_len())
+                self.objs.append(new_obj)
+                return new_obj.get_id()
+        elif isinstance(obj, _ObjectGroup):
+            self.add(obj.objs)
         else:
-            raise TypeError(f"Can only add a ch Object or list of ch Objects to a Level")
+            raise TypeError(f"Can only add a ch Object, ch ObjectGroup, or list of ch Objects to a Level")
 
-    def _add_all(self, objs: list[_O, ...]):
+    def _add_all(self, objs: list[_Object, ...]):
         """Add all objects of a list."""
         for obj in objs:
             self.add(obj)
 
-    def insert(self, line: int, obj: _O):
+    def insert(self, line: int, obj: _Object):
         """Insert a new object at the given line."""
-        new_obj = obj.copy()
-        new_obj.set_id(line)
-        self.objs.insert(line, new_obj)
+        obj.set_id(line)
+        self.objs.insert(line, obj)
 
         # Shift ids of following objects.
         for obj_line in range(line + 1, self.get_len()):
             self.objs[obj_line].increment_id()
 
-    def replace(self, line: int, obj: _O) -> _O:
+    def replace(self, line: int, obj: _Object) -> _Object:
         """Replace an object at the given line with a new object.
         :return: previous object at the given line."""
-        new_obj = obj.copy()
-        new_obj.set_id(line)
+        obj.set_id(line)
         old_obj = self.objs[line]
-        self.objs[line] = new_obj
+        self.objs[line] = obj
         return old_obj
 
-    def remove(self, line: int) -> _O:
+    def remove(self, line: int) -> _Object:
         """Remove an object at the given line.
         :return: removed object"""
         old_obj = self.objs.pop(line)
@@ -91,13 +99,38 @@ class Level:
                 self.remove(i)
             i -= 1
 
-    def object_at(self, line: int) -> _O:
+    def object_at(self, line: int) -> _Object:
         """:return: object at the given line"""
         return self.objs[line]
 
     def get_len(self) -> int:
         """:return: number of objects in the level"""
         return len(self.objs)
+
+    def connect(self, id1, id2, connection, *args):
+        """
+        Quickly connect two objects. Use .objects.{ObjectType}() for more control and syntax.
+        :param id1:         ID of first object.
+        :param id2:         ID of second object.
+        :param connection:  Type of connection (str): glue, rope, portal_rope, pulley, hinge, slider, or special.
+        :param args:        Optional arguments; see documentation of each connection (in objects.py) for syntax.
+        :return:
+        """
+        match connection:
+            case 'glue':
+                self.add(_objects.Glue(self.object_at(id1), self.object_at(id2)))
+            case 'rope':
+                self.add(_objects.Rope(self.object_at(id1), self.object_at(id2), *args))
+            case 'portal_rope':
+                self.add(_objects.FixedDistanceConnection(self.object_at(id1), self.object_at(id2), *args))
+            case 'pulley':
+                self.add(_objects.Pulley(self.object_at(id1), self.object_at(id2), *args))
+            case 'hinge':
+                self.add(_objects.Hinge(self.object_at(id1), self.object_at(id2), *args))
+            case 'slider':
+                self.add(_objects.Slider(self.object_at(id1), self.object_at(id2), *args))
+            case 'special':
+                self.add(_objects.SpecialConnection(self.object_at(id1), self.object_at(id2), *args))
 
     # OTHER ############################################################################################################
 
@@ -138,8 +171,12 @@ class Level:
 
     def to_file(self, path: str):
         """Save the level to a .txt file"""
+        if not path.endswith(".txt"):
+            path += ".txt"
+
         with open(path, 'w') as f:
             f.writelines(self.to_str())
+
         print(f"Successfully converted level to file under {path}")
 
     def copy(self):
@@ -150,9 +187,9 @@ class Level:
         return new_level
 
 
-def parse(txt: str):
+def parse(level_text: str):
     """Parse an existing level so that you can edit it with this library."""
-    split_txt = txt.splitlines(keepends=True)
+    split_txt = level_text.splitlines(keepends=True)
     lvl = Level()
 
     # Parse Header.
@@ -193,7 +230,7 @@ def parse(txt: str):
 
     # Add Objects to Level.
     for obj_txt in obj_list[1:]:  # index 0 is header
-        obj = _O.parse(obj_txt)
+        obj = _Object.parse(obj_txt, lvl)
         if obj is not None:
             lvl.add(obj)
 

@@ -16,6 +16,9 @@ class Player(_Object):
         if bullet:
             self.modifiers.append('bullet')
 
+        self.number_of_positions = 1
+
+
 # SOLID OBJECTS ########################################################################################################
 
 
@@ -32,18 +35,34 @@ class Circle(_Object):
         if attractor != 0:
             self.add_modifier(f"attr {attractor}")
 
+        self.number_of_positions = 1
+
 
 class Rectangle(_Object):
-    def __init__(self, x_pos, y_pos, width, height, rotation=0):
+    def __init__(self, x_pos, y_pos, width, height, rotation=0, coords_by_center=False):
         """
         Immovable Rectangle
-        :param x_pos:       Position of center
-        :param y_pos:       Position of center
-        :param width:       Half of displayed width (measured radially from center)
-        :param height:      Half of displayed height (measured radially from center)
+        :param x_pos:       Position of top-left corner of rectangle (left), or of center if coords_by_center
+        :param y_pos:       Position of top-left corner of rectangle (top), or of center if coords_by_center
+        :param width:       Width of Rectangle
+        :param height:      Height of Rectangle
         :param rotation:    Rotation of rectangle; increase to rotate clockwise; default is 0
+        :param coords_by_center:    If True, interprets given position and size as from center; default is False.
         """
-        super().__init__(['b', x_pos, y_pos, width, height, rotation])
+        if coords_by_center:
+            super().__init__(['b', x_pos, y_pos, width / 2, height / 2, rotation])
+        else:
+            half_w = width / 2
+            half_h = height / 2
+            super().__init__(['b', x_pos + half_w, y_pos + half_h, half_w, half_h, rotation])
+
+        # super().__init__(['b', x_pos, y_pos, width, height, rotation])
+
+        self.number_of_positions = 1
+
+    def set_position(self, pos_1: tuple[..., ...], pos_2=None, pos_3=None, pos_4=None):
+        self.attributes[1] = pos_1[0] + int(self.attributes[3])
+        self.attributes[2] = pos_1[1] + int(self.attributes[4])
 
 
 class Triangle(_Object):
@@ -59,6 +78,8 @@ class Triangle(_Object):
         """
         super().__init__(['t', x1, y1, x2, y2, x3, y3])
 
+        self.number_of_positions = 3
+
 
 class Line(_Object):
     def __init__(self, x1, y1, x2, y2, thickness=3):
@@ -71,6 +92,8 @@ class Line(_Object):
         :param thickness:   Thickness of line; default is 3
         """
         super().__init__(['l_at', x1, y1, x2, y2, thickness])
+
+        self.number_of_positions = 2
 
 
 class Arc(_Object):
@@ -88,13 +111,15 @@ class Arc(_Object):
         :param thickness:   Thickness of outer edge; default is 3
         """
         # The function of the extra '2' is unclear
-        super().__init__(['/ LE_ARC_DESCRIPTION', x_pos, y_pos, start_pos, end_pos, radius, ctr_x, ctr_y, 2, thickness])
+        super().__init__(['/ LE_ARC_DESCRIPTION', x_pos, y_pos, end_pos, start_pos, radius, ctr_x, ctr_y, 2, thickness])
+
+        self.number_of_positions = 1
 
 
 class Curve(_Object):
     def __init__(self, start_x, start_y, ctr1_x, ctr1_y, ctr2_x, ctr2_y, end_x, end_y, thickness=3, resolution=100):
         """
-        Bézier Curve
+        Cubic Bézier Curve
         :param start_x:     Position of starting point
         :param start_y:     Position of starting point
         :param ctr1_x:      Position of 1st control point
@@ -107,6 +132,8 @@ class Curve(_Object):
         :param resolution:  Béziers are made up of smaller lines. Resolution is how many smaller lines there are; default is 100
         """
         super().__init__(['curve', start_x, start_y, ctr1_x, ctr1_y, ctr2_x, ctr2_y, end_x, end_y, thickness, resolution])
+
+        self.number_of_positions = 4
 
 
 class GrowingCircle(_Object):
@@ -125,27 +152,39 @@ class GrowingCircle(_Object):
         if attractor != 0:
             self.add_modifier(f"attr {attractor}")
 
+        self.number_of_positions = 1
 
-class GrowingRectangle(_Object):
-    def __init__(self, x_pos, y_pos, width, height, rotation=0, keep_pos=False):
+
+class GrowingRectangle(Rectangle):
+    def __init__(self, x_pos, y_pos, width, height, rotation=0, keep_pos=False, coords_by_center=False):
         """
         Solid rectangle that grows when a collectable is collected
-        :param x_pos:       Position of center
-        :param y_pos:       Position of center
-        :param width:       Half of displayed width (measured radially from center)
-        :param height:      Half of displayed height (measured radially from center)
+        :param x_pos:       Position of top-left corner of rectangle (left), or of center if coords_by_center
+        :param y_pos:       Position of top-left corner of rectangle (top), or of center if coords_by_center
+        :param width:       Width of Rectangle
+        :param height:      Height of Rectangle
         :param rotation:    Rotation of rectangle; increase to rotate clockwise; default is 0
         :param keep_pos:    If True, maintain the x- and y-positions. If False, move relative to new level size; default is False
+        :param coords_by_center:    If True, interprets given position and size as from center of rectangle; default is False.
         """
-        super().__init__(['rGr', x_pos, y_pos, width, height, rotation])
+        if coords_by_center:
+            _Object.__init__(self, ['rGr', x_pos, y_pos, width / 2, height / 2, rotation])
+        else:
+            half_w = width / 2
+            half_h = height / 2
+            _Object.__init__(self, ['rGr', x_pos + half_w, y_pos + half_h, half_w, half_h, rotation])
+
         if keep_pos:
             self.add_modifier("samePosition")
+
+        self.number_of_positions = 1
+
 
 # MOVEABLE OBJECTS #####################################################################################################
 #   side note: 'movable' is spelled wrong in the whole game, so I will spell it wrong here too lol
 
 
-class MoveableCircle(_Object):
+class MoveableCircle(Circle):
     def __init__(self, x_pos, y_pos, radius, density=1, damping=0, wheel_image=False, attractor=0):
         """
         Movable Circle
@@ -157,32 +196,44 @@ class MoveableCircle(_Object):
         :param wheel_image: Use the wheel sprite instead of the solid circle sprite if True; default is False
         :param attractor:   Planet gravity; positive pulls movable objects to it, negative pushes away; default is 0
         """
-        super().__init__(['mc', x_pos, y_pos, radius, density, damping])
+        _Object.__init__(self, ['mc', x_pos, y_pos, radius, density, damping])
         if wheel_image:
             self.add_modifier("wheelsprite")
         if attractor != 0:
             self.add_modifier(f"attr {attractor}")
 
+        self.number_of_positions = 1
 
-class MoveableRectangle(_Object):
-    def __init__(self, x_pos, y_pos, width, height, density=1, damping=-1, rotation=0, fix_rotation=False):
+
+class MoveableRectangle(Rectangle):
+    def __init__(self, x_pos, y_pos, width, height, density=1, damping=-1, rotation=0, fix_rotation=False,
+                 coords_by_center=False):
         """
         Movable Rectangle
-        :param x_pos:           Position of center
-        :param y_pos:           Position of  center
-        :param width:           Half of displayed width (measured radially from center)
-        :param height:          Half of displayed height (measured radially from center)
+        :param x_pos:           Position of top-left corner of rectangle (left), or of center if coords_by_center
+        :param y_pos:           Position of top-left corner of rectangle (top), or of center if coords_by_center
+        :param width:           Width of Rectangle
+        :param height:          Height of Rectangle
         :param density:         Density of rectangle; make 0 to turn solid; default is 1
         :param damping:         How quickly the object is slowed when no force is applied; default is 0
         :param rotation:        Rotation of rectangle; increase to rotate clockwise; default is 0
         :param fix_rotation:    Disable rotation if True; default is False
+        :param coords_by_center:    If True, interprets given position and size as from center; default is False.
         """
-        super().__init__(['mb', x_pos, y_pos, width, height, density, damping, rotation, damping])
+        if coords_by_center:
+            _Object.__init__(self, ['mb', x_pos, y_pos, width / 2, height / 2, density, damping, rotation, damping])
+        else:
+            half_w = width / 2
+            half_h = height / 2
+            _Object.__init__(self, ['mb', x_pos + half_w, y_pos + half_h, half_w, half_h, density, damping, rotation, damping])
+
         if fix_rotation:
             self.add_modifier("fixrot")
 
+        self.number_of_positions = 1
 
-class MoveableTriangle(_Object):
+
+class MoveableTriangle(Triangle):
     def __init__(self, x1, y1, x2, y2, x3, y3, density=1, fix_rotation=False):
         """
         Movable Triangle
@@ -195,29 +246,44 @@ class MoveableTriangle(_Object):
         :param density:         Density of triangle; make 0 to turn solid; default is 1
         :param fix_rotation:    Disable rotation if True; default is False
         """
-        super().__init__(['mt', x1, y1, x2, y2, x3, y3, density])
+        _Object.__init__(self, ['mt', x1, y1, x2, y2, x3, y3, density])
         if fix_rotation:
             self.add_modifier("fixrot")
+
+        self.number_of_positions = 3
+
 
 # SPECIAL OBJECTS ######################################################################################################
 
 
-class RotatableRectangle(_Object):
-    def __init__(self, x_pos, y_pos, width, height, rotation=0, density=1, damping=0):
+class RotatableRectangle(Rectangle):
+    def __init__(self, x_pos, y_pos, width, height, rotation=0, density=1, damping=0, coords_by_center=False):
         """
         Rotatable Rectangle
-        :param x_pos:       Position of center
-        :param y_pos:       Position of center
-        :param width:       Full width of rectangle (unlike all other rectangle objects)
-        :param height       Full height of rectangle (unlike all other rectangle objects)
+        :param x_pos:       Position of top-left corner of rectangle (left), or of center if coords_by_center
+        :param y_pos:       Position of top-left corner of rectangle (top), or of center if coords_by_center
+        :param width:       Width of Rectangle
+        :param height:      Height of Rectangle
         :param rotation:    Rotation of rectangle; increase to rotate clockwise; default is 0
         :param density:     Density of rectangle; default is 1
         :param damping:     How quickly the object is slowed when no force is applied; default is 0
+        :param coords_by_center:    If True, interprets given position and size as from center; default is False.
         """
-        super().__init__(['rr', x_pos, y_pos, width, height, rotation, density, damping])
+        if coords_by_center:
+            _Object.__init__(self, ['rr', x_pos, y_pos, width, height, rotation, density, damping])
+        else:
+            half_w = width / 2
+            half_h = height / 2
+            _Object.__init__(self, ['rr', x_pos + half_w, y_pos + half_h, width, height, rotation, density, damping])
+
+        self.number_of_positions = 1
+
+    def set_position(self, pos_1: tuple[..., ...], pos_2=None, pos_3=None, pos_4=None):
+        self.attributes[1] = pos_1[0] + int(self.attributes[3]) / 2
+        self.attributes[2] = pos_1[1] + int(self.attributes[4]) / 2
 
 
-class RotatableCircle(_Object):
+class RotatableCircle(Circle):
     def __init__(self, x_pos, y_pos, radius, motor_speed=0, torque=100):
         """
         Rotatable Circle
@@ -227,28 +293,41 @@ class RotatableCircle(_Object):
         :param motor_speed: Speed of rotation; default is 0
         :param torque:      Torque of rotation; default is 100
         """
-        super().__init__(['rc', x_pos, y_pos, radius, motor_speed, torque])
+        _Object.__init__(self, ['rc', x_pos, y_pos, radius, motor_speed, torque])
+
+        self.number_of_positions = 1
 
 
-class SpringyRectangle(_Object):
-    def __init__(self, x_pos, y_pos, width, height, rotation=0, density=1, frequency=2, damping=.3, fulcrum_offset=0, fulcrum_radius=10):
+class SpringyRectangle(Rectangle):
+    def __init__(self, x_pos, y_pos, width, height, rotation=0, density=1, frequency=2, damping=.3,
+                 fulcrum_offset=0, fulcrum_radius=10, coords_by_center=False):
         """
         Rectangle that returns to a resting position of 0 degrees when rotated
-        :param x_pos:           Position of center of rectangle
-        :param y_pos:           Position of center of rectangle
-        :param width:           Half of displayed width of rectangle (measured radially from its center)
-        :param height:          Half of displayed height of rectangle (measured radially from its center)
+        :param x_pos:           Position of top-left corner of rectangle (left), or of center if coords_by_center
+        :param y_pos:           Position of top-left corner of rectangle (top), or of center if coords_by_center
+        :param width:           Width of Rectangle
+        :param height:          Height of Rectangle
         :param rotation:        Starting rotation; default is 0. Note that regardless of this value, resting rotation is still 0 degrees.
         :param density:         Density of object; default is 1
         :param frequency:       Frequency of spring; default is 2
         :param damping:         How quickly the object is slowed when no force is applied; default is .3
         :param fulcrum_offset:  Position of fulcrum (point of rotation) relative to rectangle's center; default is 0
         :param fulcrum_radius:  Radius of fulcrum; does not affect rotation; default is 10
+        :param coords_by_center:    If True, interprets given position and size as from center; default is False.
         """
-        super().__init__(['wr', x_pos, y_pos, width, height, rotation, density, frequency, damping, fulcrum_offset, fulcrum_radius])
+        if coords_by_center:
+            _Object.__init__(self, ['wr', x_pos, y_pos, width / 2, height / 2,
+                                    rotation, density, frequency, damping, fulcrum_offset, fulcrum_radius])
+        else:
+            half_w = width / 2
+            half_h = height / 2
+            _Object.__init__(self, ['wr', x_pos + half_w, y_pos + half_h, half_w, half_h,
+                                    rotation, density, frequency, damping, fulcrum_offset, fulcrum_radius])
+
+        self.number_of_positions = 1
 
 
-class BallGenerator(_Object):
+class CircleGenerator(Circle):
     def __init__(self, x_pos, y_pos, radius, density=1, disappear_after=5, wait_between=1, init_delay=0, damping=0, no_fade=False, start_off=False):
         """
         Generates movable circles at timed intervals.
@@ -264,7 +343,7 @@ class BallGenerator(_Object):
         :param start_off:       If True, the generator does not start until triggered with a special connection; default is False
         """
         # The timed settings are multiplied by 60, as they are stored in frames, with 60 FPS.
-        super().__init__(['tmc', x_pos, y_pos, radius, density, disappear_after*60, wait_between*60, init_delay*60])
+        _Object.__init__(self, ['tmc', x_pos, y_pos, radius, density, disappear_after*60, wait_between*60, init_delay*60])
         if damping != 0:
             self.add_modifier(f"damping {damping}")
         if no_fade:
@@ -272,16 +351,19 @@ class BallGenerator(_Object):
         if start_off:
             self.add_modifier("off")
 
+        self.number_of_positions = 1
 
-class RectangleGenerator(_Object):
+
+class RectangleGenerator(Rectangle):
     def __init__(self, x_pos, y_pos, width, height, density=1, rotation=0, damping=0, disappear_after=5,
-                 wait_between=1, init_delay=0, fix_rotation=False, no_fade=False, start_off=False):
+                 wait_between=1, init_delay=0, fix_rotation=False, no_fade=False, start_off=False,
+                 coords_by_center=False):
         """
         Generates movable rectangles at timed intervals.
-        :param x_pos:           Position of center
-        :param y_pos:           Position of  center
-        :param width:           Half of displayed width (measured radially from center)
-        :param height:          Half of displayed height (measured radially from center)
+        :param x_pos:           Position of top-left corner of rectangle (left), or of center if coords_by_center
+        :param y_pos:           Position of top-left corner of rectangle (top), or of center if coords_by_center
+        :param width:           Width of Rectangle
+        :param height:          Height of Rectangle
         :param density:         Density of rectangle; make 0 to turn solid; default is 1
         :param rotation:        Rotation of rectangle; increase to rotate clockwise; default is 0
         :param damping:         How quickly the object is slowed when no force is applied; default is 0
@@ -291,9 +373,20 @@ class RectangleGenerator(_Object):
         :param fix_rotation:    Disable rotation if True; default is False
         :param no_fade:         If True, disables the fading animation; default is False
         :param start_off:       If True, the generator does not start until triggered with a special connection; default is False
+        :param coords_by_center:    If True, interprets given position and size as from center; default is False.
         """
         # The timed settings are multiplied by 60, as they are stored in frames, with 60 FPS.
-        super().__init__(['tmb', x_pos, y_pos, width, height, density, damping, rotation, damping, disappear_after*60, wait_between*60, init_delay*60])
+        if coords_by_center:
+            _Object.__init__(self, ['tmb', x_pos, y_pos, width / 2, height / 2,
+                                    density, damping, rotation, damping,
+                                    disappear_after*60, wait_between*60, init_delay*60])
+        else:
+            half_w = width / 2
+            half_h = height / 2
+            _Object.__init__(self, ['tmb', x_pos + half_w, y_pos + half_h, half_w, half_h,
+                                    density, damping, rotation, damping,
+                                    disappear_after*60, wait_between*60, init_delay*60])
+
         if fix_rotation:
             self.add_modifier('fixrot')
         if no_fade:
@@ -301,8 +394,10 @@ class RectangleGenerator(_Object):
         if start_off:
             self.add_modifier('off')
 
+        self.number_of_positions = 1
 
-class TriangleGenerator(_Object):
+
+class TriangleGenerator(Triangle):
     def __init__(self, x1, y1, x2, y2, x3, y3, density=1, disappear_after=5, wait_between=1, init_delay=0, fix_rotation=False, no_fade=False, start_off=False):
         """
         Generates movable triangles at timed intervals.
@@ -322,13 +417,15 @@ class TriangleGenerator(_Object):
         """
         # The timed settings are multiplied by 60, as they are stored in frames, with 60 FPS.
         # The function of the extra -1's is unclear.
-        super().__init__(['tmt', x1, y1, x2, y2, x3, y3, density, -1, -1, disappear_after*60, wait_between*60, init_delay*60])
+        _Object.__init__(self, ['tmt', x1, y1, x2, y2, x3, y3, density, -1, -1, disappear_after*60, wait_between*60, init_delay*60])
         if fix_rotation:
             self.add_modifier('fixrot')
         if no_fade:
             self.add_modifier('noanim')
         if start_off:
             self.add_modifier('off')
+
+        self.number_of_positions = 3
 
 
 class Portal(_Object):
@@ -345,6 +442,9 @@ class Portal(_Object):
         # The function of the extra '1' is unclear.
         super().__init__(['portal', portal_x, portal_y, target_x, target_y, 1, deactivate_circle, min_time])
 
+        self.number_of_positions = 2
+
+
 # CONNECTIONS ##########################################################################################################
 
 
@@ -352,18 +452,20 @@ class Glue(_Object):
     def __init__(self, obj1, obj2):
         """
         Glues two movable objects together
-        :param obj1: id of obj 1
-        :param obj2: id of obj 2
+        :param obj1: reference to obj 1
+        :param obj2: reference to obj 2
         """
-        super().__init__(['/ GLUE', obj1, obj2])
+        super().__init__(['/ GLUE', obj1.get_id(), obj2.get_id()])
+
+        self.number_of_positions = 0
 
 
 class Rope(_Object):
     def __init__(self, obj1, obj2, offset1_x=0, offset1_y=0, offset2_x=0, offset2_y=0, max_length=0):
         """
-        Connect two objects with the ability to move semi-independently
-        :param obj1:        id of obj 1
-        :param obj2:        id of obj 2
+        Connect two objects with the ability to move semi-independently. For portals, use the Fixed Distance connection.
+        :param obj1:        reference to obj 1
+        :param obj2:        reference to obj 2
         :param offset1_x:   offset from obj 1; default is 0
         :param offset1_y:   offset from obj 1; default is 0
         :param offset2_x:   offset from obj 2; default is 0
@@ -373,18 +475,21 @@ class Rope(_Object):
         super().__init__(['r', offset1_x, offset1_y, offset2_x, offset2_y, max_length])
         self.set_connections([obj1, obj2])
 
+        self.number_of_positions = 0
 
-class PortalRope(_Object):
-    """I don't know why this is a separate object?"""
+
+class FixedDistanceConnection(_Object):
     def __init__(self, obj1, obj2, also_move_destination=False):
         """
-        A rope connected between a portal and another object
-        :param obj1: id of portal
-        :param obj2: id of other object
+        Fixed Distance connection. Only used for portals in-game; using on other objects is... funky...
+        :param obj1: reference to portal
+        :param obj2: reference to other object
         :param also_move_destination: if True, also moves destination of portal; default is False
         """
         super().__init__(['fd', int(also_move_destination)])
         self.set_connections([obj1, obj2])
+
+        self.number_of_positions = 0
 
 
 class Pulley(_Object):
@@ -393,8 +498,8 @@ class Pulley(_Object):
         """
         Connect objects via a pulley system.
         Note that the offsets are unavailable in the editor, and they can be buggy if not set to 0.
-        :param obj1:            id of first object
-        :param obj2:            id of second object
+        :param obj1:            reference to first object
+        :param obj2:            reference to second object
         :param pulley1_x:       location of first pulley, relative to obj1; default is 0
         :param pulley1_y:       location of first pulley, relative to obj1; default is -100
         :param pulley2_x:       location of first pulley, relative to obj2; default is 0
@@ -411,13 +516,15 @@ class Pulley(_Object):
         if unlock_movement:
             self.add_modifier("p_free_hmovement")
 
+        self.number_of_positions = 0
+
 
 class Hinge(_Object):
     def __init__(self, obj1, obj2, offset_x=0, offset_y=0, draw_connection_line=False, enable_collisions=False, motor_speed=0, torque=100):
         """
         Connect two objects rigidly while allowing rotation.
-        :param obj1:                    id of obj 1
-        :param obj2:                    id of obj 2
+        :param obj1:                    reference to obj 1
+        :param obj2:                    reference to obj 2
         :param offset_x:                offset of pivot point from obj 1; default is 0
         :param offset_y:                offset of pivot point from obj 1; default is 0
         :param draw_connection_line:    if True, shows a line between the connected objects; default is False
@@ -428,19 +535,23 @@ class Hinge(_Object):
         super().__init__(['hinge', offset_x, offset_y, int(draw_connection_line), int(enable_collisions), motor_speed, torque])
         self.set_connections([obj1, obj2])
 
+        self.number_of_positions = 0
+
 
 class Slider(_Object):
     def __init__(self, obj1, obj2, offset_x=0, offset_y=0):
         """
         Connect objects rigidly with the ability to move in a straight line between each other.
-        :param obj1:        id of obj 1
-        :param obj2:        id of obj 2
+        :param obj1:        reference to obj 1
+        :param obj2:        reference to obj 2
         :param offset_x:    offset from obj 1; default is 0
         :param offset_y:    offset from obj 1; default is 0
         """
         # The functions of the unassigned attributes are unclear.
         super().__init__(['pr', 1.00, -0.00, -1, -1, offset_x, offset_y])
         self.set_connections([obj1, obj2])
+
+        self.number_of_positions = 0
 
 
 class SpecialConnection(_Object):
@@ -455,12 +566,15 @@ class SpecialConnection(_Object):
             'On' - enables generator or portal,
             'Off' - disables generator or portal,
             'Teleport' - teleports player to end point of connected portal
-        :param collectable: id of connected special collectable
-        :param target:      id of target object
+        :param collectable: reference to connected special collectable
+        :param target:      reference to target object
         :param action:      action to perform on target object
         """
         super().__init__(['spc', action])
         self.set_connections([collectable, target])
+
+        self.number_of_positions = 0
+
 
 # COLLECTABLES #########################################################################################################
 
@@ -480,9 +594,11 @@ class Collectable(_Object):
         """
         tag = 'io' if collect_from_object else 'i'
         super().__init__([f"ic '{tag}'", x_pos, y_pos, appear_at_segment])
-        self.init_modifiers(part_of_segment, zoom, is_trigger)
+        self._init_modifiers(part_of_segment, zoom, is_trigger)
 
-    def init_modifiers(self, part_of_segment, zoom, is_trigger):
+        self.number_of_positions = 1
+
+    def _init_modifiers(self, part_of_segment, zoom, is_trigger):
         """
         Initialize object's modifiers
         :param part_of_segment:     Number of previously collected collectables after which the object first appears; default is 0
@@ -534,7 +650,7 @@ class GravityCollectable(Collectable):
         """
         tag = 'im' if collect_from_object else 'ig'
         _Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, grav_dir, grav_strength])
-        self.init_modifiers(part_of_segment, zoom, is_trigger)
+        self._init_modifiers(part_of_segment, zoom, is_trigger)
 
 
 class SizeCollectable(Collectable):
@@ -553,7 +669,7 @@ class SizeCollectable(Collectable):
         """
         tag = 'iso' if collect_from_object else 'is'
         _Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, size])
-        self.init_modifiers(part_of_segment, zoom, is_trigger)
+        self._init_modifiers(part_of_segment, zoom, is_trigger)
 
 
 class DisconnectCollectable(Collectable):
@@ -571,7 +687,7 @@ class DisconnectCollectable(Collectable):
         """
         tag = 'irbo' if collect_from_object else 'irb'
         _Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment])
-        self.init_modifiers(part_of_segment, zoom, is_trigger)
+        self._init_modifiers(part_of_segment, zoom, is_trigger)
 
 
 class SpeedCollectable(Collectable):
@@ -590,7 +706,7 @@ class SpeedCollectable(Collectable):
         """
         tag = 'ipso' if collect_from_object else 'ips'
         _Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, speed])
-        self.init_modifiers(part_of_segment, zoom, is_trigger)
+        self._init_modifiers(part_of_segment, zoom, is_trigger)
 
 
 class SpecialCollectable(Collectable):
@@ -608,5 +724,5 @@ class SpecialCollectable(Collectable):
         """
         tag = 'ispo' if collect_from_object else 'isp'
         _Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment])
-        self.init_modifiers(part_of_segment, zoom, is_trigger)
+        self._init_modifiers(part_of_segment, zoom, is_trigger)
 
