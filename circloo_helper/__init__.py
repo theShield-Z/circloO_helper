@@ -7,8 +7,8 @@ from .object_groups import ObjectGroup
 
 import circloo_helper.mechanisms
 from .tools import *
-from .text import write, create_write_character
-from .pixel_builder import build
+from .text import write, create_write_character, write_
+from .pixel_builder import build, build_
 
 try:
     from .plotters import plot_points, plot_image

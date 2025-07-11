@@ -1,4 +1,5 @@
 from .pixel_builder import build as _build
+from .pixel_builder import build_ as _build_
 
 _CHARACTERS = {
 
@@ -422,7 +423,8 @@ _CHARACTERS = {
 }
 
 
-def write(text: str, start_x=1500, start_y=1500, size=1, spacing=8):
+# old version; slightly faster for default operation, but outdated for use with other objects
+def write(text: str, start_x=1500, start_y=1500, size=1, spacing=1, obj_type="b", *args):
     """
     Convert a string into circloO objects.
     :param text:    String to be converted
@@ -438,17 +440,50 @@ def write(text: str, start_x=1500, start_y=1500, size=1, spacing=8):
     for char in text:
 
         if char.upper() in _CHARACTERS.keys():
-            letter = _build(_CHARACTERS[char.upper()], cur_x, start_y, size)
+            letter = _build(_CHARACTERS[char.upper()], cur_x, start_y, size, obj_type, *args)
             for obj in letter:
                 objs.append(obj)
 
         else:
             # Character not found.
-            letter = _build(_CHARACTERS['missing'], cur_x, start_y, size)
+            letter = _build(_CHARACTERS['missing'], cur_x, start_y, size, obj_type, *args)
             for obj in letter:
                 objs.append(obj)
 
-        cur_x += size * spacing
+        cur_x += size * (spacing + 3)
+
+    return objs
+
+
+def write_(text: str, start_x=1500, start_y=1500, size=1, spacing=1, attributes=None, modifiers=None):
+    """
+    Newer version of write() that implements build_()
+    :param text:    String to be converted
+    :param start_x: Initial x value (left)
+    :param start_y: Initial y value (top)
+    :param size:    Size of each pixel
+    :param spacing: Space between each letter
+    :param attributes:  Optional argument to create the text with non-Rectangle objects; see documentation of build() for details.
+    :param modifiers:   Optional argument to create the text with non-Rectangle objects; see documentation of build() for details.
+    :return:    String of circloO objects (w/o header)
+    """
+    objs = []
+    cur_x = start_x
+
+    for char in text:
+
+        if char.upper() in _CHARACTERS.keys():
+            letter = _build_(_CHARACTERS[char.upper()], cur_x, start_y, size, attributes, modifiers)
+            for obj in letter:
+                objs.append(obj)
+
+        else:
+            # Character not found.
+            letter = _build_(_CHARACTERS['missing'], cur_x, start_y, size, attributes, modifiers)
+            for obj in letter:
+                objs.append(obj)
+
+        cur_x += size * (spacing + 3)
 
     return objs
 
