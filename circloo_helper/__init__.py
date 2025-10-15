@@ -1,6 +1,6 @@
 from warnings import warn
 
-from .level import Level, parse
+from .level import Level, parse, parse_from_file
 from .object import Object
 import circloo_helper.objects
 from .object_groups import ObjectGroup

@@ -3,7 +3,7 @@ from .objects import Rectangle as _R
 from .object import Object as _O
 
 
-"""Need to think of a way to be able to use any object."""
+"""Need to update this to be able to use any object."""
 
 
 # old version; slightly faster for default operation, but outdated for use with other objects

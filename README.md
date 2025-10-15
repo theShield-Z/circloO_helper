@@ -1,6 +1,6 @@
 This is a work-in-progress repository of programs to make it easier for circloO level creators to create levels.
 
-Once this is merged to the main branch (I haven't fully vetted everything yet), this will be the first fully complete version of the package!
+Let me know if there are any bugs or errors not mentioned below.
 
 # Features
 
@@ -67,7 +67,7 @@ with open("my_circloO_level.txt", 'r') as file:
 ```
 Then work with it just like you would a level created from scratch.
 
-## Mechanisms (soon to be replaced fully with object groups)
+## Mechanisms (deprecated in favor of Object Groups)
 
 circloO Helper also supports mechanisms: groups of objects that perform a specific function. These may not all work correctly depending on your setup—it's on my to-do list.
 Create a mechanism, then add it to your level:
@@ -108,7 +108,6 @@ You can also change the size of the text using `size` and the spacing of the let
 
 # To Do / Known Bugs
 
-- fully deprecate mechanisms in favor of object groups
 - add a defaults module that contains example levels and former mechanisms
 - improve examples in `main.py` to reflect the most recent version.
 - update the README with new features for this version

@@ -2,17 +2,18 @@ from .object import Object as _Object
 
 
 class Player(_Object):
-    def __init__(self, x_pos, y_pos, size=1, speed=1, density=1, bullet=True):
+    def __init__(self, x_pos, y_pos, size=1, speed=1, density=1, restitution=0, bullet=True):
         """
         The circle that you control with left & right.
-        :param x_pos:   Position of center
-        :param y_pos:   Position of center
-        :param size:    Radius of circle; default is 1
-        :param speed:   Player speed; default is 1
-        :param density: Circle density (how much it is affected by gravity); default is 1
+        :param x_pos:       Position of center
+        :param y_pos:       Position of center
+        :param size:        Radius of circle; default is 1
+        :param speed:       Player speed; default is 1
+        :param density:     Circle density (how much it is affected by gravity); default is 1
+        :param restitution: How much the player bounces after hitting a surface; hidden in-game; default is 0
         :param bullet:  if True, enables setting to improve high-speed physics; default is True
         """
-        super().__init__(['y', x_pos, y_pos, size, speed, density])
+        super().__init__(['y', x_pos, y_pos, size, speed, density, restitution])
         if bullet:
             self.modifiers.append('bullet')
 
@@ -429,18 +430,19 @@ class TriangleGenerator(Triangle):
 
 
 class Portal(_Object):
-    def __init__(self, portal_x, portal_y, target_x, target_y, deactivate_circle=7, min_time=0):
+    def __init__(self, portal_x, portal_y, target_x, target_y, appear_at_circle=1, deactivate_circle=7, min_time=0):
         """
         Teleports the player that touches it to a target location.
         :param portal_x:            X coordinate of portal
         :param portal_y:            Y coordinate of portal
         :param target_x:            X coordinate of target location
         :param target_y:            Y coordinate of target location
+        :param appear_at_circle:    Circle at which the portal is activated; hidden in-game; default is 1
         :param deactivate_circle:   Circle (number of collected collectables) after which to deactivate portal; default is 7
         :param min_time:            Minimum touch time required for portal to trigger; default is 0
         """
         # The function of the extra '1' is unclear.
-        super().__init__(['portal', portal_x, portal_y, target_x, target_y, 1, deactivate_circle, min_time])
+        super().__init__(['portal', portal_x, portal_y, target_x, target_y, appear_at_circle, deactivate_circle, min_time])
 
         self.number_of_positions = 2
 
@@ -487,6 +489,23 @@ class FixedDistanceConnection(_Object):
         :param also_move_destination: if True, also moves destination of portal; default is False
         """
         super().__init__(['fd', int(also_move_destination)])
+        self.set_connections([obj1, obj2])
+
+        self.number_of_positions = 0
+
+
+class DistanceConnection(_Object):
+    def __init__(self, obj1, obj2, offset1_x=0, offset1_y=0, offset2_x=0, offset2_y=0):
+        """
+        Works similar to ropes, but the objects are at a fixed distance from each other. This is not available in-game.
+        :param obj1:        reference to obj 1
+        :param obj2:        reference to obj 2
+        :param offset1_x:   offset from obj 1; default is 0
+        :param offset1_y:   offset from obj 1; default is 0
+        :param offset2_x:   offset from obj 2; default is 0
+        :param offset2_y:   offset from obj 2; default is 0
+        """
+        super().__init__(['d', offset1_x, offset1_y, offset2_x, offset2_y])
         self.set_connections([obj1, obj2])
 
         self.number_of_positions = 0
@@ -566,6 +585,8 @@ class SpecialConnection(_Object):
             'On' - enables generator or portal,
             'Off' - disables generator or portal,
             'Teleport' - teleports player to end point of connected portal
+            'RotationOn' - allows movable rectangles to rotate
+            'RotationOff' - disables movable rectangles from rotating
         :param collectable: reference to connected special collectable
         :param target:      reference to target object
         :param action:      action to perform on target object

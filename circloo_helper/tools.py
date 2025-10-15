@@ -3,7 +3,7 @@ import math as _math
 import subprocess as _subprocess
 from .level import Level as _Level
 from .object import Object as _Object
-# from .object_groups import ObjectGroup as _ObjectGroup
+from .object_groups import ObjectGroup as _ObjectGroup
 from .objects import Rectangle, Arc
 
 __all__ = ["polar", "pivot", "push_to_android", "combine"]
@@ -32,7 +32,7 @@ def polar(r, theta, start_x=1500, start_y=1500, in_degrees=True):
 
 def pivot(obj: _Object | list[_Object], theta, pivot_x=1500, pivot_y=1500, in_degrees=True):
     """
-    Rotate an Object around a pivot.
+    Rotate an Object or ObjectGroup around a pivot.
     :param obj:         Object to be rotated.
     :param theta:       Angle by which to rotate object.
     :param pivot_x:     X coordinate of pivot point.
@@ -40,7 +40,7 @@ def pivot(obj: _Object | list[_Object], theta, pivot_x=1500, pivot_y=1500, in_de
     :param in_degrees:  If True, assumes given angle theta is in degrees (instead of radians); default is True.
     """
 
-    # should probable change this to return a pivoted obj, not change the input obj
+    # SHOULD CHANGE TO RETURN COPY OF OBJECT INSTEAD OF ALTERING IT. #########
 
     if isinstance(obj, _Object):
         num = obj.number_of_positions

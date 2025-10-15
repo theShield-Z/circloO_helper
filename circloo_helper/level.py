@@ -2,6 +2,7 @@ from random import randint as _randint
 from .object import Object as _Object
 import circloo_helper.objects as _objects
 from .object_groups import ObjectGroup as _ObjectGroup
+import time
 
 
 class Level:
@@ -38,7 +39,8 @@ class Level:
     # OBJECTS ##########################################################################################################
 
     def add(self, obj: _Object | _ObjectGroup | list) -> int:
-        """Insert a new object at the end of the level."""
+        """Insert a new object at the end of the level.
+           Returns the index of the added object."""
         if isinstance(obj, list):
             self._add_all(obj)
         elif isinstance(obj, _Object):
@@ -141,11 +143,11 @@ class Level:
                "/ circloO level\n"
                "/ Made with circloO Level Editor\n"
                f"totalCircles {self.segments} {int(self.start_full)}\n"
-               f"/ EDITOR_TOOL {1} {'select'}\n"
-               f"/ EDITOR_VIEW {1500} {1500} {1}\n"
-               "/ EDT 3303\n"
-               "/ _SAVE_TIME_1721799879000_END\n"
-               "levelscriptVersion 8\n"
+               f"/ EDITOR_TOOL {1} {'select'}\n"            
+               f"/ EDITOR_VIEW {1500} {1500} {.3}\n"        # Centered, full screen
+               "/ EDT 14400\n"                              # Cannot upload immediately if <14400
+               f"/ _SAVE_TIME_{int(time.time())}_END\n"     # Unix time at export
+               "levelscriptVersion 9\n"
                f"COLORS {self.color}\n"
                f"grav {self.grav_scale} {self.grav_dir}")
         if self.rec_sfx:
@@ -235,5 +237,11 @@ def parse(level_text: str):
             lvl.add(obj)
 
     return lvl
+
+
+def parse_from_file(file_path: str):
+    """Parse an existing level from its file path."""
+    with open(file_path, 'r') as f:
+        return parse(f.read())
 
 

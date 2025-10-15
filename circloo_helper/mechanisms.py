@@ -1,4 +1,4 @@
-"""Mechanisms will be deprecated in favor of ObjectGroups"""
+"""Mechanisms are deprecated in favor of ObjectGroups"""
 
 from .level import Level as _Level
 import circloo_helper.objects as _o
