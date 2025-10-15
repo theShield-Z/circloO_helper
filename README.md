@@ -20,7 +20,7 @@ Examples for how to use the library are in `main.py`.
 
 First, add the library to your project. This is most easily done via pip:
 ```
-pip install git+https://github.com/theShield-Z/circloO_helper.git@test
+pip install git+https://github.com/theShield-Z/circloO_helper.git
 ```
 Then, `import circloo_helper as ch` to your program.
 
