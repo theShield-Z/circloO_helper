@@ -47,7 +47,8 @@ def video_to_circloo(video_path: str, frame_size: tuple[int, int], frame_skip: i
                      start_x: float, start_y: float, size: float = 1,
                      threshold: float = .5, channel_weights: tuple[float, float, float] = (1, 1, 1),
                      dither_pattern: _np.array = LINE_DITHER_8X8, start_off: bool = False,
-                     show_img: bool = True, wait_key: int = 5):
+                     show_img: bool = False, wait_key: int = 1,
+                     turn_off_noanim: bool = False):
     """
     Converts a video into circloO objects via dithering & grayscale conversion.
     :param video_path:          Path to video for conversion.
@@ -61,10 +62,16 @@ def video_to_circloo(video_path: str, frame_size: tuple[int, int], frame_skip: i
     :param channel_weights:     Weights for RGB channels; default is (1, 1, 1).
     :param dither_pattern:      Pattern for dithering video; None for no dithering; default is BAYER_MATRIX_8X8.
     :param start_off:           If True, the video does not start playing when the level is started.
-    :param show_img:            If True, displays video as it is converted; default is True.
-    :param wait_key:            Time to wait between displaying of each frame; default is 5
+    :param show_img:            If True, displays video as it is converted; faster when False; default is False
+    :param wait_key:            Time to wait between displaying of each frame; default is 1; automatically set to 0 if show_img is False
+    :param turn_off_noanim:     Turns off noanim; somewhat reduces file size, but makes end result less viewable
     :return:                List of circloO objects
     """
+
+    if not show_img:
+        # Set wait_key to 0 if not displaying the video
+        #   wait_key is necessary for displaying video, but slows the program significantly when not needed.
+        wait_key = 0
 
     # Open video.
     cap = _cv.VideoCapture(video_path)
@@ -105,7 +112,7 @@ def video_to_circloo(video_path: str, frame_size: tuple[int, int], frame_skip: i
     _cv.destroyAllWindows()
 
     time_reduced = greedy_time(processed_frames)
-    objs = reduced_build(time_reduced, start_x, start_y, size, fps, start_off)
+    objs = reduced_build(time_reduced, start_x, start_y, size, fps, start_off, turn_off_noanim=turn_off_noanim)
 
     print(f"Successfully converted {video_path} to circloO objects.")
 
@@ -238,11 +245,12 @@ def greedy_time(frames: list[_np.array, ...]):
 
 
 def reduced_build(frames: list[_np.array, ...], start_x: float = 1500, start_y: float = 1500, size: float = 1,
-                  fps: float = 2, start_off: bool = False):
+                  fps: float = 2, start_off: bool = False, turn_off_noanim: bool = False):
     """Convert a reduced image array into a list of circloO objects."""
     objs = []
     xpos = 0
     ypos = 0
+    no_fade = not turn_off_noanim
 
     for f in range(len(frames)):
         for i in range(frames[f].shape[0]):
@@ -252,16 +260,16 @@ def reduced_build(frames: list[_np.array, ...], start_x: float = 1500, start_y: 
                 t_factor = frames[f][i, j, 2]
 
                 if x_factor > 0:
-                    size_x = size * x_factor
-                    size_y = size * y_factor
-                    x_coord = xpos + start_x + size_x
-                    y_coord = ypos + start_y + size_y
+                    size_x = size * x_factor * 2
+                    size_y = size * y_factor * 2
+                    x_coord = xpos + start_x
+                    y_coord = ypos + start_y
                     on_time = t_factor / fps
                     delay = (fps + f) / fps
 
-                    objs.append(_Gen(x_coord, y_coord, size_x, size_y, density=0, damping=-1,
+                    objs.append(_Gen(x_coord, y_coord, size_x, size_y, density=0, damping=0,
                                      disappear_after=on_time, wait_between=9999, init_delay=delay,
-                                     start_off=start_off, no_fade=True))
+                                     start_off=start_off, no_fade=no_fade))
 
                 xpos += 2 * size
 

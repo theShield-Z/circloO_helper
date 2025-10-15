@@ -8,12 +8,13 @@ from .objects import Rectangle as _Rectangle
 
 # MAIN FUNCTIONS #######################################################################################################
 
-def image_to_circloo(img_path, downsample_factor,
-                     start_x, start_y, size=1,
+def image_to_circloo(img_path: str, downsample_factor: int,
+                     start_x: float, start_y: float, size=1,
                      threshold=.5, channel_weights=(1, 1, 1),
                      reduce_objects=True, show_img=True):
     """
     Converts an image into circloO objects via dithering & grayscale conversion.
+    Use without dithering (using movables) is natively in the game using Ctrl+Shift+F4.
     :param img_path:            Path to input image
     :param downsample_factor:   Factor to reduce image size; 1 for no change
     :param start_x:             Initial x-coordinate (left)
@@ -124,7 +125,7 @@ def reduced_build(arr: _np.array, start_x=1500, start_y=1500, size=1):
             y_factor = arr[i, j, 1]
 
             if x_factor > 0:
-                objs.append(_Rectangle(xpos + start_x + size * x_factor, ypos + start_y + size * y_factor, size * x_factor, size * y_factor))
+                objs.append(_Rectangle(xpos + start_x, ypos + start_y, size * x_factor * 2, size * y_factor * 2))
 
             xpos += 2 * size
 

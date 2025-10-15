@@ -1,3 +1,5 @@
+"""Mechanisms are deprecated in favor of ObjectGroups"""
+
 from .level import Level as _Level
 import circloo_helper.objects as _o
 
@@ -28,7 +30,7 @@ class PauseDetector(Mechanism):
     def __init__(self, x_pos, y_pos, start_id):
         player = _o.Player(x_pos, y_pos, bullet=False)
         main_portal = _o.Portal(x_pos, y_pos, x_pos + 22, y_pos)
-        rope = _o.PortalRope(start_id + 1, start_id, also_move_destination=True)
+        rope = _o.FixedDistanceConnection(start_id + 1, start_id, also_move_destination=True)
         reset1 = _o.Portal(x_pos + 100, y_pos - 30, x_pos, y_pos)
         reset2 = _o.Portal(x_pos + 100, y_pos + 30, x_pos, y_pos)
         box1 = _o.Rectangle(x_pos - 45, y_pos - .5, 5, 37.5)
@@ -50,8 +52,8 @@ class RingCounter(Mechanism):
             # id = 2 * i + 0
             trigger = _o.SpecialCollectable(start_x + 50 * i, y_pos, is_trigger=True, collect_from_object=True)
             # id = 2 * i + 1
-            generator = _o.BallGenerator(start_x + 50 * i, y_pos, 20, density=0,
-                                         disappear_after=0, wait_between=9999, no_fade=True, start_off=True)
+            generator = _o.CircleGenerator(start_x + 50 * i, y_pos, 20, density=0,
+                                           disappear_after=0, wait_between=9999, no_fade=True, start_off=True)
 
             objs.append(trigger)
             objs.append(generator)
@@ -79,7 +81,7 @@ class RingCounter(Mechanism):
 
         # Create Initializer
         objs.append(_o.SpecialCollectable(start_x - 75, y_pos, is_trigger=True, collect_from_object=True))
-        objs.append(_o.BallGenerator(start_x - 75, y_pos, 20, density=0, disappear_after=.1, wait_between=9999))
+        objs.append(_o.CircleGenerator(start_x - 75, y_pos, 20, density=0, disappear_after=.1, wait_between=9999))
         objs.append(_o.SpecialConnection(start_id + 6 * length + 1, start_id + 6 * length + 2, 'Off'))
         objs.append(_o.SpecialConnection(start_id + 6 * length + 1, start_id, 'Deactivate'))
         objs.append(_o.SpecialConnection(start_id + 6 * length + 1, start_id + 1, 'NowIf'))
@@ -91,8 +93,8 @@ class FlipFlop(Mechanism):
     def __init__(self, x_pos, y_pos, in_x, in_y, start_id):
         left_trigger = _o.SpecialCollectable(x_pos-12, y_pos-12, is_trigger=True, collect_from_object=True)
         right_trigger = _o.SpecialCollectable(x_pos+13, y_pos+13, is_trigger=True, collect_from_object=True)
-        left_gen = _o.BallGenerator(x_pos-12, y_pos-12, 10, 0, 0, 9999, no_fade=True)
-        right_gen = _o.BallGenerator(x_pos+13, y_pos+13, 10, 0, 0, 9999, start_off=True, no_fade=True)
+        left_gen = _o.CircleGenerator(x_pos - 12, y_pos - 12, 10, 0, 0, 9999, no_fade=True)
+        right_gen = _o.CircleGenerator(x_pos + 13, y_pos + 13, 10, 0, 0, 9999, start_off=True, no_fade=True)
         in_trigger = _o.SpecialCollectable(in_x, in_y, is_trigger=True, collect_from_object=True)
 
         dest_1 = _o.SpecialConnection(start_id, start_id+3, 'Destroy')
