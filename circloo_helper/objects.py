@@ -1,5 +1,19 @@
 from .object import Object as _Object
 
+_INPUT_TRIGGER_MAP = {
+    ('left', 'pressed'): 0,
+    ('right', 'pressed'): 1,
+    ('left', 'released'): 2,
+    ('right', 'released'): 3,
+    ('both', 'pressed'): 4,
+    ('both', 'released'): 5,
+    ('left', 'down'): 6,
+    ('right', 'down'): 7,
+    ('both', 'down'): 8,
+    ('every_frame', None): 9,
+    ('on_trigger', None): 10
+}
+
 
 class Player(_Object):
     def __init__(self, x_pos, y_pos, size=1, speed=1, density=1, restitution=0, bullet=True):
@@ -21,7 +35,6 @@ class Player(_Object):
 
 
 # SOLID OBJECTS ########################################################################################################
-
 
 class Circle(_Object):
     def __init__(self, x_pos, y_pos, radius, attractor=0):
@@ -111,7 +124,8 @@ class Arc(_Object):
         :param ctr_y:       Position of control point (3-point arc only); set to -1 to keep as center arc; default is -1
         :param thickness:   Thickness of outer edge; default is 3
         """
-        # The function of the extra '2' is unclear
+        # The extra 2 value is labeled as precision in the level import script, so in theory it should be the number of
+        #   individual lines that make up the arc (like for Béziers), but it appears to have no effect.
         super().__init__(['/ LE_ARC_DESCRIPTION', x_pos, y_pos, end_pos, start_pos, radius, ctr_x, ctr_y, 2, thickness])
 
         self.number_of_positions = 1
@@ -182,8 +196,6 @@ class GrowingRectangle(Rectangle):
 
 
 # MOVEABLE OBJECTS #####################################################################################################
-#   side note: 'movable' is spelled wrong in the whole game, so I will spell it wrong here too lol
-
 
 class MoveableCircle(Circle):
     def __init__(self, x_pos, y_pos, radius, density=1, damping=0, wheel_image=False, attractor=0):
@@ -221,12 +233,13 @@ class MoveableRectangle(Rectangle):
         :param fix_rotation:    Disable rotation if True; default is False
         :param coords_by_center:    If True, interprets given position and size as from center; default is False.
         """
+        # The extra 0 value likely used to be rotational damping, but it is not read in the import script.
         if coords_by_center:
-            _Object.__init__(self, ['mb', x_pos, y_pos, width / 2, height / 2, density, damping, rotation, damping])
+            _Object.__init__(self, ['mb', x_pos, y_pos, width / 2, height / 2, density, 0, rotation, damping])
         else:
             half_w = width / 2
             half_h = height / 2
-            _Object.__init__(self, ['mb', x_pos + half_w, y_pos + half_h, half_w, half_h, density, damping, rotation, damping])
+            _Object.__init__(self, ['mb', x_pos + half_w, y_pos + half_h, half_w, half_h, density, 0, rotation, damping])
 
         if fix_rotation:
             self.add_modifier("fixrot")
@@ -255,7 +268,6 @@ class MoveableTriangle(Triangle):
 
 
 # SPECIAL OBJECTS ######################################################################################################
-
 
 class RotatableRectangle(Rectangle):
     def __init__(self, x_pos, y_pos, width, height, rotation=0, density=1, damping=0, coords_by_center=False):
@@ -417,7 +429,7 @@ class TriangleGenerator(Triangle):
         :param start_off:       If True, the generator does not start until triggered with a special connection; default is False
         """
         # The timed settings are multiplied by 60, as they are stored in frames, with 60 FPS.
-        # The function of the extra -1's is unclear.
+        # The extra -1 values do nothing.
         _Object.__init__(self, ['tmt', x1, y1, x2, y2, x3, y3, density, -1, -1, disappear_after*60, wait_between*60, init_delay*60])
         if fix_rotation:
             self.add_modifier('fixrot')
@@ -441,14 +453,30 @@ class Portal(_Object):
         :param deactivate_circle:   Circle (number of collected collectables) after which to deactivate portal; default is 7
         :param min_time:            Minimum touch time required for portal to trigger; default is 0
         """
-        # The function of the extra '1' is unclear.
         super().__init__(['portal', portal_x, portal_y, target_x, target_y, appear_at_circle, deactivate_circle, min_time])
 
         self.number_of_positions = 2
 
 
-# CONNECTIONS ##########################################################################################################
+class Dummy(_Object):
+    def __init__(self, x_pos, y_pos):
+        """Literally does nothing."""
+        super().__init__(['dummy', x_pos, y_pos])
+        self.number_of_positions = 1
 
+
+class ParticleRectangle(_Object):
+    def __init__(self, x_pos, y_pos, width, height, rotation=0, coords_by_center=False):
+        """Splits into a bunch of tiny movable circles with high restitution."""
+        if coords_by_center:
+            super().__init__(['partR', x_pos, y_pos, width / 2, height / 2, rotation])
+        else:
+            half_w = width / 2
+            half_h = height / 2
+            super().__init__(['partR', x_pos + half_w, y_pos + half_h, half_w, half_h, rotation])
+
+
+# CONNECTIONS ##########################################################################################################
 
 class Glue(_Object):
     def __init__(self, obj1, obj2):
@@ -474,6 +502,9 @@ class Rope(_Object):
         :param offset2_y:   offset from obj 2; default is 0
         :param max_length:  maximum length the rope can extend beyond the distance between obj1 & obj2; default is 0
         """
+        if isinstance(obj1, Portal) or isinstance(obj2, Portal):
+            raise TypeError("To connect a Portal with a Rope, use FixedDistanceConnection(portal, other) instead.")
+
         super().__init__(['r', offset1_x, offset1_y, offset2_x, offset2_y, max_length])
         self.set_connections([obj1, obj2])
 
@@ -566,32 +597,39 @@ class Slider(_Object):
         :param offset_x:    offset from obj 1; default is 0
         :param offset_y:    offset from obj 1; default is 0
         """
-        # The functions of the unassigned attributes are unclear.
-        super().__init__(['pr', 1.00, -0.00, -1, -1, offset_x, offset_y])
+        # The extra 0 values appear to do nothing, but are initialized around ±1 when created in-game, so idk.
+        super().__init__(['pr', 0, 0, 0, 0, offset_x, offset_y])
         self.set_connections([obj1, obj2])
 
         self.number_of_positions = 0
 
 
 class SpecialConnection(_Object):
-    def __init__(self, collectable, target, action):
+    def __init__(self, collectable, target, action, *args):
         """
         Perform an action to a target object upon the collection of a collectable.
         Supported Actions:
-            'Disconnect' - disconnects ropes & hinges (currently crashes game),
+            'Disconnect' - disconnects ropes & hinges,
             'Follow' - sets camera to follow object,
             'Reset' - enables & resets timer of generators,
             'Now' - generates one object from a generator,
+            'NowIf' - generates an object from a generator if none currently exist,
+            'Destroy' - destroys all instances of a generator object,
             'On' - enables generator or portal,
             'Off' - disables generator or portal,
-            'Teleport' - teleports player to end point of connected portal
-            'RotationOn' - allows movable rectangles to rotate
-            'RotationOff' - disables movable rectangles from rotating
+            'Teleport' - teleports player to end point of connected portal,
+            'RotationOn' - allows movable rectangles/triangles to rotate,
+            'RotationOff' - disables movable rectangles/triangles from rotating,
+            'SetSpeed' - sets speed of object in x- and y-direction; requires extra x & y arg,
+            'Impulse' - applies a force to an object in x- and y-direction; requires extra x & y arg,
+            'Trigger' - collects/triggers the collectable it is connected to,
+            'TriggerRandom' - collects/triggers at random one of the collectables it is connected to (if it is only connected to one, it is triggered with a 50%)
         :param collectable: reference to connected special collectable
         :param target:      reference to target object
         :param action:      action to perform on target object
+        :param args:        other arguments required for SetSpeed & Impulse
         """
-        super().__init__(['spc', action])
+        super().__init__(['spc', action, *args])
         self.set_connections([collectable, target])
 
         self.number_of_positions = 0
@@ -599,10 +637,10 @@ class SpecialConnection(_Object):
 
 # COLLECTABLES #########################################################################################################
 
-
 class Collectable(_Object):
     def __init__(self, x_pos, y_pos, appear_at_segment=1,
-                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False):
+                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False,
+                 start_disabled=False, disable_on_trigger=False):
         """
         Collectable circle
         :param x_pos:               Position of center
@@ -615,11 +653,11 @@ class Collectable(_Object):
         """
         tag = 'io' if collect_from_object else 'i'
         super().__init__([f"ic '{tag}'", x_pos, y_pos, appear_at_segment])
-        self._init_modifiers(part_of_segment, zoom, is_trigger)
+        self._init_modifiers(part_of_segment, zoom, is_trigger, start_disabled, disable_on_trigger)
 
         self.number_of_positions = 1
 
-    def _init_modifiers(self, part_of_segment, zoom, is_trigger):
+    def _init_modifiers(self, part_of_segment, zoom, is_trigger, start_disabled, disable_on_trigger):
         """
         Initialize object's modifiers
         :param part_of_segment:     Number of previously collected collectables after which the object first appears; default is 0
@@ -632,6 +670,10 @@ class Collectable(_Object):
             self.add_modifier(f"zoomFactor {zoom}")
         if is_trigger:
             self.add_modifier("trigger")
+        if start_disabled:
+            self.add_modifier("off")
+        if disable_on_trigger:
+            self.add_modifier("ott")
 
     def set_sound(self, group='', note=0, volume=1, pitch=1, play_if_no_function=False):
         """
@@ -656,7 +698,8 @@ class Collectable(_Object):
 
 class GravityCollectable(Collectable):
     def __init__(self, x_pos, y_pos, appear_at_segment=1, grav_dir=270, grav_strength=1,
-                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False):
+                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False,
+                 start_disabled=False, disable_on_trigger=False):
         """
         Collectable circle that changes gravity.
         :param x_pos:               Position of center
@@ -671,12 +714,13 @@ class GravityCollectable(Collectable):
         """
         tag = 'im' if collect_from_object else 'ig'
         _Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, grav_dir, grav_strength])
-        self._init_modifiers(part_of_segment, zoom, is_trigger)
+        self._init_modifiers(part_of_segment, zoom, is_trigger, start_disabled, disable_on_trigger)
 
 
 class SizeCollectable(Collectable):
     def __init__(self, x_pos, y_pos, appear_at_segment=1, size=1,
-                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False):
+                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False,
+                 start_disabled=False, disable_on_trigger=False):
         """
         Collectable circle that changes player size.
         :param x_pos:               Position of center
@@ -690,12 +734,13 @@ class SizeCollectable(Collectable):
         """
         tag = 'iso' if collect_from_object else 'is'
         _Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, size])
-        self._init_modifiers(part_of_segment, zoom, is_trigger)
+        self._init_modifiers(part_of_segment, zoom, is_trigger, start_disabled, disable_on_trigger)
 
 
 class DisconnectCollectable(Collectable):
     def __init__(self, x_pos, y_pos, appear_at_segment=1,
-                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False):
+                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False,
+                 start_disabled=False, disable_on_trigger=False):
         """
         Collectable circle that disconnects player from all connections.
         :param x_pos:               Position of center
@@ -708,12 +753,13 @@ class DisconnectCollectable(Collectable):
         """
         tag = 'irbo' if collect_from_object else 'irb'
         _Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment])
-        self._init_modifiers(part_of_segment, zoom, is_trigger)
+        self._init_modifiers(part_of_segment, zoom, is_trigger, start_disabled, disable_on_trigger)
 
 
 class SpeedCollectable(Collectable):
     def __init__(self, x_pos, y_pos, appear_at_segment=1, speed=1,
-                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False):
+                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False,
+                 start_disabled=False, disable_on_trigger=False):
         """
         Collectable circle that changes player speed.
         :param x_pos:               Position of center
@@ -726,13 +772,15 @@ class SpeedCollectable(Collectable):
         :param collect_from_object: If True, changes collectable to only be collected upon collision with a non-player object; default is False
         """
         tag = 'ipso' if collect_from_object else 'ips'
-        _Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, speed])
-        self._init_modifiers(part_of_segment, zoom, is_trigger)
+        # The extra -1 is supposed to set a new density, but does not appear to do anything.
+        _Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment, speed, -1])
+        self._init_modifiers(part_of_segment, zoom, is_trigger, start_disabled, disable_on_trigger)
 
 
 class SpecialCollectable(Collectable):
     def __init__(self, x_pos, y_pos, appear_at_segment=1,
-                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False):
+                 part_of_segment=0, zoom=-1, is_trigger=False, collect_from_object=False,
+                 start_disabled=False, disable_on_trigger=False):
         """
         Collectable circle that performs an action on an object connected to it via a special connection.
         :param x_pos:               Position of center
@@ -745,5 +793,20 @@ class SpecialCollectable(Collectable):
         """
         tag = 'ispo' if collect_from_object else 'isp'
         _Object.__init__(self, [f"ic '{tag}'", x_pos, y_pos, appear_at_segment])
-        self._init_modifiers(part_of_segment, zoom, is_trigger)
+        self._init_modifiers(part_of_segment, zoom, is_trigger, start_disabled, disable_on_trigger)
 
+
+class InputTrigger(Collectable):
+    def __init__(self, x_pos, y_pos, input='left', action='pressed',
+                 zoom=-1, start_disabled=False, disable_on_trigger=False):
+
+        if input == 'every_frame':
+            trigger_type = 9
+        elif input == 'on_trigger':
+            trigger_type = 10
+        else:
+            trigger_type = _INPUT_TRIGGER_MAP[input, action]
+
+        _Object.__init__(self, ['ispt', x_pos, y_pos, trigger_type])
+        self._init_modifiers(0, zoom, False, start_disabled, disable_on_trigger)
+        self.number_of_positions = 1
