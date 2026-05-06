@@ -7,11 +7,7 @@ class Object:
     def __repr__(self):
         return self._to_str()
 
-    def get_id(self) -> int:
-        return self._id
-
     def _set_id(self, id: int):
-        import traceback
         self._id = id
 
     def _set_attributes(self, *args):
@@ -37,3 +33,6 @@ class Object:
         line_enumeration = f"\n< {self._id}" if enumeration else ""
 
         return connstr + primary + secondary + line_enumeration
+
+    def get_id(self) -> int:
+        return self._id

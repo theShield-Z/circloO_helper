@@ -113,6 +113,10 @@ class Level:
         """:return: the object at the given index."""
         return self._objs[index]
 
+    def get_objs(self):
+        """:return: list of all objects in the Level."""
+        return self._objs
+
     def to_clipboard(self) -> str:
         """
         Copy level text contents to clipboard.

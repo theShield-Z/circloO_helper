@@ -4,7 +4,7 @@ from .level import Level #, parse, parse_from_file
 from .object import Object
 import circloo_helper.circloo_objects
 
-# from .tools import *
+from .tools import *
 # from .text import write, create_write_character, write_
 # from .pixel_builder import build, build_
 
