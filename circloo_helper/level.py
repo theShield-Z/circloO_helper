@@ -1,5 +1,6 @@
 from random import randint as _randint
 import time
+import pyperclip
 
 
 class Level:
@@ -59,8 +60,10 @@ class Level:
         return self._to_str()
 
     def _make_header(self):
-        """Convert level settings into a string header.
-                :return: header string"""
+        """
+        Convert level settings into a string header.
+        :return: header string
+        """
         txt = ("/\n"
                "/ circloO level\n"
                "/ Made with circloO Level Editor\n"
@@ -109,3 +112,12 @@ class Level:
     def object_at(self, index):
         """:return: the object at the given index."""
         return self._objs[index]
+
+    def to_clipboard(self) -> str:
+        """
+        Copy level text contents to clipboard.
+        Also returns the level text, so you can do print(Level().to_clipboard) to simplify workflows.
+        """
+        txt = str(self)
+        pyperclip.copy(txt)
+        return txt

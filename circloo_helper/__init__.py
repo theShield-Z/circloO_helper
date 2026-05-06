@@ -1,5 +1,4 @@
 from warnings import warn
-from pyperclip import copy
 
 from .level import Level #, parse, parse_from_file
 from .object import Object
