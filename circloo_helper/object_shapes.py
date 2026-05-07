@@ -127,8 +127,12 @@ class Collectable(_ObjectShape):
         if self._is_mute:
             self._add_modifier("sfx 'none'")
         elif self.sound is not None:
-            self._add_modifier(f"sfx '{self.sound.group}{self.sound.note}' "
-                               f"{self.sound.volume} {self.sound.pitch} {self.sound.play_if_no_function}")
+            sound_txt = f"sfx '{self.sound.group}{self.sound.note}'"
+            if self.sound.volume != 1 or self.sound.pitch != 1 or self.sound.play_if_no_function != -1:
+                sound_txt += f" {self.sound.volume} {self.sound.pitch} {self.sound.play_if_no_function}"
+            self._add_modifier(sound_txt)
+
+
 
     def set_sound(self, group='', note=0, volume=1, pitch=1, play_if_no_function=False, sound: Sound = None):
         if sound is not None:

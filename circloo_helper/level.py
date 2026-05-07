@@ -10,7 +10,7 @@ class Level:
                  grav_scale: int | float = 1,
                  grav_dir: int | float = 270,
                  start_full: bool = False,
-                 color: int | float = _randint(0, 255),
+                 color: int = _randint(0, 255),
                  music: tuple[int, int] = (0, 0),
                  recommend_sfx: bool = False,
                  default_line_thickness: int | float = 3,

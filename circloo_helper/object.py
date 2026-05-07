@@ -27,7 +27,9 @@ class Object:
         primary = ' '.join(map(str, self._attributes))
         secondary = ''.join(['\n' + str(m) for m in self._modifiers])  # New lines included here.
         connstr = ""
-        if hasattr(self, 'obj1') and hasattr(self, 'obj2'):
+        if (hasattr(self, 'obj1')
+                and hasattr(self, 'obj2')
+                and type(self).__name__ != 'Glue'):     # Glue has connections but does not label them the same way.
             connstr = f"> {self.obj1.get_id()}\n> {self.obj2.get_id()}\n"
 
         line_enumeration = f"\n< {self._id}" if enumeration else ""

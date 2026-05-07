@@ -758,9 +758,10 @@ class RectangleGenerator(_ot.Generator, _ot.Moveable, _os.Rectangle):
 
     def _to_str(self, enumeration: bool = False) -> str:
         # The timed settings are multiplied by 60, as they are stored in frames, with 60 FPS.
+        # The extra 0 value likely used to be rotational damping, but it is not read in the import script.
         if self.coords_by_center:
             self._set_attributes('tmb', self.x, self.y, self.width / 2, self.height / 2,
-                                 self.density, self.damping, self.rotation, self.damping,
+                                 self.density, 0, self.rotation, self.damping,
                                  self.disappear_after * 60, self.wait_between * 60, self.init_delay * 60)
         else:
             half_w = self.width / 2
@@ -873,7 +874,7 @@ class Rope(_os.Connection):
         self.max_length = max_length
 
     def _to_str(self, enumeration: bool = False) -> str:
-        self._set_attributes('r ', self.offset1_x, self.offset1_y, self.offset2_x, self.offset2_y, self.max_length)
+        self._set_attributes('r', '', self.offset1_x, self.offset1_y, self.offset2_x, self.offset2_y, self.max_length)
         return super()._to_str(enumeration)
 
 
@@ -1007,7 +1008,7 @@ class Hinge(_ot.Rotatable, _os.Connection):
         self.torque = torque
 
     def _to_str(self, enumeration: bool = False) -> str:
-        self._set_attributes('hinge ', self.offset_x, self.offset_y,
+        self._set_attributes('hinge', '', self.offset_x, self.offset_y,
                              int(self.draw_connection_line), int(self.enable_collisions),
                              self.motor_speed, self.torque)
         return super()._to_str(enumeration)
@@ -1061,9 +1062,8 @@ class SpecialConnection(_os.Connection):
         :param action:      action to perform on target object
         :param args:        other arguments required for SetSpeed & Impulse
         """
-        if not isinstance(collectable, SpecialCollectable):
-            warnings.warn("You are trying to connect a SpecialConnection to a non-SpecialCollectable object. "
-                          "This is not recommended but still technically possible.")
+        if not isinstance(collectable, SpecialCollectable) and collectable is not None:
+            warnings.warn(f"You are trying to connect a SpecialConnection to a non-SpecialCollectable object. This is not recommended but still technically possible.")
 
         super().__init__()
         self.obj1 = collectable
@@ -1163,7 +1163,7 @@ class GravityCollectable(_os.Collectable):
 
     def _to_str(self, enumeration: bool = False) -> str:
         tag = 'im' if self.collect_from_object else 'ig'
-        self._set_attributes(f"ic '{tag}'", self.x, self.y, self.appear_at_segment,
+        self._set_attributes(f"ic '{tag}'", self.x, self.y, self.appear_at_segment, '',
                              self.grav_dir, self.grav_strength)
         return super()._to_str(enumeration)
 
@@ -1213,7 +1213,7 @@ class SizeCollectable(_os.Collectable):
         tag = 'iso' if self.collect_from_object else 'is'
         new_size = self.size * 32.50 if self.by_player_percent else self.size
 
-        self._set_attributes(f"ic '{tag}'", self.x, self.y, self.appear_at_segment, new_size)
+        self._set_attributes(f"ic '{tag}'", self.x, self.y, self.appear_at_segment, '', new_size)
         return super()._to_str(enumeration)
 
 
@@ -1300,7 +1300,7 @@ class SpeedCollectable(_os.Collectable):
 
     def _to_str(self, enumeration: bool = False) -> str:
         tag = 'ipso' if self.collect_from_object else 'ips'
-        self._set_attributes(f"ic '{tag}'", self.x, self.y, self.appear_at_segment, self.speed, self.density)
+        self._set_attributes(f"ic '{tag}'", self.x, self.y, self.appear_at_segment, '', self.speed, self.density)
         return super()._to_str(enumeration)
 
 
