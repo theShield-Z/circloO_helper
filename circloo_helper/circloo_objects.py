@@ -336,7 +336,8 @@ class MoveableCircle(_ot.Moveable, _os.Circle):
                  density: int | float = 1,
                  damping: int | float = 0,
                  attractor: int | float = 0,
-                 wheelsprite: bool = False):
+                 wheelsprite: bool = False,
+                 bullet: bool = False):
         """
         Movable Circle
         :param x_pos:       Position of center
@@ -346,6 +347,7 @@ class MoveableCircle(_ot.Moveable, _os.Circle):
         :param damping:     How quickly the object is slowed when no force is applied; default is 0
         :param attractor:   Planet gravity; positive pulls movable objects to it, negative pushes away; default is 0
         :param wheelsprite: Use the wheel sprite instead of the solid circle sprite if True; default is False
+        :param bullet:      If True, enables setting to improve high-speed physics; default is False
         """
         super().__init__()
         self.x = x_pos
@@ -355,6 +357,7 @@ class MoveableCircle(_ot.Moveable, _os.Circle):
         self.damping = damping
         self.wheelsprite = wheelsprite
         self.attractor = attractor
+        self.bullet = bullet
 
     def _to_str(self, enumeration: bool = False) -> str:
         self._set_attributes('mc', self.x, self.y, self.radius, self.density, self.damping)
@@ -371,6 +374,7 @@ class MoveableRectangle(_ot.Moveable, _os.Rectangle):
                  damping: int | float = -1,
                  rotation: int | float = 0,
                  fix_rotation: bool = False,
+                 bullet: bool = False,
                  coords_by_center: bool = False):
         """
         Movable Rectangle
@@ -382,6 +386,7 @@ class MoveableRectangle(_ot.Moveable, _os.Rectangle):
         :param damping:         How quickly the object is slowed when no force is applied; default is 0
         :param rotation:        Rotation of rectangle; increase to rotate clockwise; default is 0
         :param fix_rotation:    Disable rotation if True; default is False
+        :param bullet:          If True, enables setting to improve high-speed physics; default is False
         :param coords_by_center:    If True, interprets given position and size as from center; default is False.
         """
         super().__init__()
@@ -393,6 +398,7 @@ class MoveableRectangle(_ot.Moveable, _os.Rectangle):
         self.damping = damping
         self.rotation = rotation
         self.fix_rotation = fix_rotation
+        self.bullet = bullet
         self.coords_by_center = coords_by_center
 
     def _to_str(self, enumeration: bool = False) -> str:
@@ -417,7 +423,8 @@ class MoveableTriangle(_ot.Moveable, _os.Triangle):
                  x3: int | float,
                  y3: int | float,
                  density: int | float = 1,
-                 fix_rotation: bool = False):
+                 fix_rotation: bool = False,
+                 bullet: bool = False):
         """
         Movable Triangle
         :param x1:              Position of 1st point
@@ -428,6 +435,7 @@ class MoveableTriangle(_ot.Moveable, _os.Triangle):
         :param y3:              Position of 3rd point
         :param density:         Density of triangle; make 0 to turn solid; default is 1
         :param fix_rotation:    Disable rotation if True; default is False
+        :param bullet:          If True, enables setting to improve high-speed physics; default is False
         """
         super().__init__()
         self.x1 = x1
@@ -438,6 +446,7 @@ class MoveableTriangle(_ot.Moveable, _os.Triangle):
         self.y3 = y3
         self.density = density
         self.fix_rotation = fix_rotation
+        self.bullet = bullet
 
     def _to_str(self, enumeration: bool = False) -> str:
         self._set_attributes('mt', self.x1, self.y1, self.x2, self.y2, self.x3, self.y3, self.density)
@@ -455,6 +464,7 @@ class RotatableRectangle(_ot.Moveable, _os.Rectangle):
                  rotation: int | float = 0,
                  density: int | float = 1,
                  damping: int | float = 0,
+                 bullet: bool = False,
                  coords_by_center: bool = False):
         """
         Rotatable Rectangle
@@ -465,6 +475,7 @@ class RotatableRectangle(_ot.Moveable, _os.Rectangle):
         :param rotation:    Rotation of rectangle; increase to rotate clockwise; default is 0
         :param density:     Density of rectangle; default is 1
         :param damping:     How quickly the object is slowed when no force is applied; default is 0
+        :param bullet:      If True, enables setting to improve high-speed physics; default is False
         :param coords_by_center:    If True, interprets given position and size as from center; default is False.
         """
         super().__init__()
@@ -475,6 +486,7 @@ class RotatableRectangle(_ot.Moveable, _os.Rectangle):
         self.rotation = rotation
         self.density = density
         self.damping = damping
+        self.bullet = bullet
         self.coords_by_center = coords_by_center
 
     def _to_str(self, enumeration: bool = False) -> str:
@@ -528,6 +540,7 @@ class SpringyRectangle(_ot.Moveable, _os.Rectangle):
                  damping: int | float = .3,
                  fulcrum_offset: int | float = 0,
                  fulcrum_radius: int | float = 10,
+                 bullet: bool = False,
                  coords_by_center: bool = False):
         """
         Rectangle that returns to a resting position of 0 degrees when rotated
@@ -541,6 +554,7 @@ class SpringyRectangle(_ot.Moveable, _os.Rectangle):
         :param damping:         How quickly the object is slowed when no force is applied; default is .3
         :param fulcrum_offset:  Position of fulcrum (point of rotation) relative to rectangle's center; default is 0
         :param fulcrum_radius:  Radius of fulcrum; does not affect rotation; default is 10
+        :param bullet:          If True, enables setting to improve high-speed physics; default is False
         :param coords_by_center:    If True, interprets given position and size as from center; default is False.
         """
         super().__init__()
@@ -554,6 +568,7 @@ class SpringyRectangle(_ot.Moveable, _os.Rectangle):
         self.damping = damping
         self.fulcrum_offset = fulcrum_offset
         self.fulcrum_radius = fulcrum_radius
+        self.bullet = bullet
         self.coords_by_center = coords_by_center
 
     def _to_str(self, enumeration: bool = False) -> str:
@@ -669,7 +684,8 @@ class CircleGenerator(_ot.Generator, _ot.Moveable, _os.Circle):
                  init_delay: int | float = 0,
                  damping: int | float = 0,
                  no_fade: bool = False,
-                 start_off: bool = False):
+                 start_off: bool = False,
+                 bullet: bool = False):
         """
         Generates movable circles at timed intervals.
         :param x_pos:           Position of center
@@ -682,6 +698,7 @@ class CircleGenerator(_ot.Generator, _ot.Moveable, _os.Circle):
         :param damping:         How quickly the object is slowed when no force is applied; default is 0
         :param no_fade:         If True, disables the fading animation; default is False
         :param start_off:       If True, the generator does not start until triggered with a special connection; default is False
+        :param bullet:          If True, enables setting to improve high-speed physics; default is False
         """
         super().__init__()
         self.x = x_pos
@@ -694,6 +711,7 @@ class CircleGenerator(_ot.Generator, _ot.Moveable, _os.Circle):
         self.damping = damping
         self.no_fade = no_fade
         self.start_off = start_off
+        self.bullet = bullet
 
     def _update_modifiers(self):
         super()._update_modifiers()
@@ -722,6 +740,7 @@ class RectangleGenerator(_ot.Generator, _ot.Moveable, _os.Rectangle):
                  fix_rotation: bool = False,
                  no_fade: bool = False,
                  start_off: bool = False,
+                 bullet: bool = False,
                  coords_by_center: bool = False):
         """
         Generates movable rectangles at timed intervals.
@@ -738,6 +757,7 @@ class RectangleGenerator(_ot.Generator, _ot.Moveable, _os.Rectangle):
         :param fix_rotation:    Disable rotation if True; default is False
         :param no_fade:         If True, disables the fading animation; default is False
         :param start_off:       If True, the generator does not start until triggered with a special connection; default is False
+        :param bullet:          If True, enables setting to improve high-speed physics; default is False
         :param coords_by_center:    If True, interprets given position and size as from center; default is False.
         """
         super().__init__()
@@ -754,6 +774,7 @@ class RectangleGenerator(_ot.Generator, _ot.Moveable, _os.Rectangle):
         self.fix_rotation = fix_rotation
         self.no_fade = no_fade
         self.start_off = start_off
+        self.bullet = bullet
         self.coords_by_center = coords_by_center
 
     def _to_str(self, enumeration: bool = False) -> str:
@@ -786,7 +807,8 @@ class TriangleGenerator(_ot.Generator, _ot.Moveable, _os.Triangle):
                  init_delay: int | float = 0,
                  fix_rotation: bool = False,
                  no_fade: bool = False,
-                 start_off: bool = False):
+                 start_off: bool = False,
+                 bullet: bool = False):
         """
         Generates movable triangles at timed intervals.
         :param x1:              Position of 1st point
@@ -802,6 +824,7 @@ class TriangleGenerator(_ot.Generator, _ot.Moveable, _os.Triangle):
         :param fix_rotation:    Disable rotation if True; default is False
         :param no_fade:         If True, disables the fading animation; default is False
         :param start_off:       If True, the generator does not start until triggered with a special connection; default is False
+        :param bullet:          If True, enables setting to improve high-speed physics; default is False
         """
         super().__init__()
         self.x1 = x1
@@ -817,6 +840,7 @@ class TriangleGenerator(_ot.Generator, _ot.Moveable, _os.Triangle):
         self.fix_rotation = fix_rotation
         self.no_fade = no_fade
         self.start_off = start_off
+        self.bullet = bullet
 
     def _to_str(self, enumeration: bool = False) -> str:
         # The timed settings are multiplied by 60, as they are stored in frames, with 60 FPS.

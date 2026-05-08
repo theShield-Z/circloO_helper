@@ -16,11 +16,14 @@ class Moveable(_ObjectType):
         self.density: int | float = 1
         self.damping: int | float = 0
         self.fix_rotation: bool = False
+        self.bullet: bool = False
 
     def _update_modifiers(self):
         super()._update_modifiers()
         if self.fix_rotation:
             self._add_modifier("fixrot")
+        if self.bullet:
+            self._add_modifier("bullet")
 
 
 class Generator(_ObjectType):
