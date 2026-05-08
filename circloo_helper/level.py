@@ -125,3 +125,11 @@ class Level:
         txt = str(self)
         pyperclip.copy(txt)
         return txt
+
+    def to_file(self, path: str):
+        """
+        Save level text to path.
+        """
+        txt = str(self)
+        with open(path, 'w') as f:
+            f.write(txt)

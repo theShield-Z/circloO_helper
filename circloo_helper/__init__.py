@@ -1,7 +1,7 @@
 from warnings import warn
 
 from .level import Level
-from .level_parser import parse
+from .level_parser import parse, read_file, read_clipboard
 from .object import Object
 import circloo_helper.circloo_objects
 

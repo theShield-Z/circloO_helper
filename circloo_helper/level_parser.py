@@ -1,4 +1,5 @@
 import re
+from pyperclip import paste
 
 from .level import Level
 from .circloo_objects import *
@@ -355,3 +356,13 @@ def parse(level_text: str) -> Level:
 
     return lvl
 
+
+def read_clipboard() -> Level:
+    lvl = parse(paste())
+    return lvl
+
+
+def read_file(path: str) -> Level:
+    with open(path, 'r') as f:
+        lvl = parse(f.read())
+    return lvl
