@@ -1,9 +1,14 @@
-from warnings import warn
+from warnings import warn as _warn
 
 from .level import Level
 from .level_parser import parse, read_file, read_clipboard
-from .object import Object
+
+import circloo_helper.object_shapes
+import circloo_helper.object_types
+
+from .object import Object, CustomObject
 import circloo_helper.circloo_objects
+import circloo_helper.custom_objects
 
 from .tools import *
 # from .text import write, create_write_character, write_

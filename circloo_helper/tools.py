@@ -1,6 +1,5 @@
 import math
 import subprocess
-from .level import Level
 from .object import Object
 import circloo_helper.object_shapes as _os
 from .circloo_objects import Line, Arc, Curve, Dummy, Portal
@@ -159,7 +158,7 @@ def push_to_android(file_path, destination='/sdcard'):
         print(f"An error has occurred: {e}")
 
 
-def combine(level_1: Level, level_2: Level) -> Level:
+def combine(level_1: 'Level', level_2: 'Level') -> 'Level':
     """
     Combines the contents of two levels, keeping the header of the first level and ensuring no duplicates.
     """

@@ -2,6 +2,8 @@ from random import randint as _randint
 import time
 import pyperclip
 
+from .object import Object, CustomObject
+
 
 class Level:
 
@@ -34,6 +36,7 @@ class Level:
         :param gravcontrol:         If True, control direction of gravity with left/right instead of horizontal speed
         """
         self._objs = []
+        self._size = 0
         self._LEVELSCRIPT_VERSION = 10
 
         # Header variables.
@@ -54,7 +57,7 @@ class Level:
         self.gravcontrol = gravcontrol
 
     def __len__(self):
-        return len(self._objs)
+        return self._size
 
     def __repr__(self):
         return self._to_str()
@@ -99,15 +102,21 @@ class Level:
         text.append(self._make_header())
 
         # Append each object in objs to level
-        for i in range(len(self)):
-            text.append(self._objs[i]._to_str(enumeration=True))
+        for obj in self._objs:
+            text.append(obj._to_str(enumeration=True))
 
         return '\n'.join(text)
 
-    def add(self, obj):
+    def add(self, obj: Object | CustomObject):
         """Add an object to the Level."""
         obj._set_id(len(self))
         self._objs.append(obj)
+
+        # Update level size.
+        if isinstance(obj, CustomObject):
+            self._size += len(obj)
+        else:
+            self._size += 1
 
     def object_at(self, index):
         """:return: the object at the given index."""

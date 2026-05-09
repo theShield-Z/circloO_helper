@@ -1,4 +1,4 @@
-import warnings
+from warnings import warn as _warn
 
 import circloo_helper.object_types as _ot
 import circloo_helper.object_shapes as _os
@@ -1087,7 +1087,7 @@ class SpecialConnection(_os.Connection):
         :param args:        other arguments required for SetSpeed & Impulse
         """
         if not isinstance(collectable, SpecialCollectable) and collectable is not None:
-            warnings.warn(f"You are trying to connect a SpecialConnection to a non-SpecialCollectable object. This is not recommended but still technically possible.")
+            _warn(f"You are trying to connect a SpecialConnection to a non-SpecialCollectable object. This is not recommended but still technically possible.")
 
         super().__init__()
         self.obj1 = collectable

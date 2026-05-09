@@ -1,3 +1,4 @@
+from warnings import warn
 import re
 from pyperclip import paste
 
@@ -356,7 +357,7 @@ def parse(level_text: str) -> Level:
                     cur_obj = None
 
         except Exception as e:
-            warnings.warn(f"One or more objects could not be parsed: {e}")
+            warn(f"One or more objects could not be parsed: {e}")
 
     return lvl
 
