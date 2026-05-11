@@ -142,7 +142,7 @@ def pivot(obj: Object, theta, pivot_x=1500, pivot_y=1500, in_degrees=True):
     return new_obj
 
 
-def translate(obj: Object, by_x, by_y):
+def translate(obj: Object, by_x=0, by_y=0):
     """
     Translate an Object by x and y.
     :param obj:     Object to be rotated.
@@ -240,7 +240,7 @@ def scale(obj: Object, by_x, by_y=None):
     Scale an Object by x and y, originated from the centroid of the Object.
     :param obj:     Object to be rotated.
     :param by_x:    Number of units to be scaled along the x-axis
-    :param by_y:    Number of units to be scaled along the y-axis
+    :param by_y:    Number of units to be scaled along the y-axis. If None, by_x is used for both axes.
     """
     if by_x == 0 or by_y == 0:
         raise ValueError("Cannot scale an object by 0.")
