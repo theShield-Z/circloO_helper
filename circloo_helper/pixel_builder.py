@@ -1,132 +1,168 @@
-"""DEPRECATED"""
+import numpy as np
+from copy import copy
 
-# import numpy as _np
-# from .objects import Rectangle as _R
-# from .object import Object as _O
-#
-#
-# """Need to update this to be able to use any object."""
-#
-#
-# # old version; slightly faster for default operation, but outdated for use with other objects
-# def build(arr: _np.array, start_x=1500, start_y=1500, size=1, obj_type="b", *args):
-#     """
-#     Convert a binary array into circloO objects.
-#     Old version of build_(); slightly faster for default operation, but does not handle use with other objects well.
-#     :param arr: Binary array
-#     :param start_x: Initial x value (left)
-#     :param start_y: Initial y value (top)
-#     :param size: Size of each pixel
-#     :param obj_type: Tag for type of object used to build array; default is 'b' for rectangle (box); see documentation (in objects.py) for each object's tag.
-#     :param args: If obj_type is not "rectangle", the extra parameters used for the object; see documentation of each object (in objects.py) for syntax.
-#     :return: String of circloO objects (w/o header)
-#     """
-#
-#     objs = []
-#     # if obj_type != "b":
-#     #     # args = list(args)
-#     #     # args[0] = obj_type, 0, 0, size, *args[0]
-#     #     attributes = obj_type, 0, 0, size, *args[0]
-#     #     other_args = args[1:]
-#
-#     for i in range(len(arr)):
-#         for j in range(len(arr[i])):
-#             if arr[i][j] == 1:
-#                 xpos = j * size + start_x
-#                 ypos = i * size + start_y
-#                 if obj_type == "b":
-#                     objs.append(_R(xpos, ypos, size, size))
-#                 else:
-#                     attributes = obj_type, xpos + size/2, ypos + size/2, size/2, *args[0]
-#                     objs.append(_O(list(attributes), list(args[1])))
-#
-#     return objs
-#
-#
-# def build_(arr: _np.array, start_x=1500, start_y=1500, size=1,
-#            attributes=None, modifiers=None,):
-#     """
-#     Convert a binary array into circloO objects. Builds with basic Rectangles by default, but args can be used to build
-#     with other objects using the base Object (in object.py) syntax with the optional arguments attributes, modifiers,
-#     and connections.
-#
-#     When using other objects, mark the indices that should be replaced with the x-position, y-position, and size with
-#     "X", "Y", and "S", respcetively. You can also indicate that the size or position's value should be added to or
-#     multiplied by a number using +[number] or *[number] (- and / also work) prefixed by a '%' in the string. e.g., to
-#     add 1 to the size and multiply the size by .5, the attribute at the desired index should be "S%+1%*.5".
-#
-#     Note that for most Rectangles, the x- and y-positions should be subtracted by half the size and the size should be
-#     multiplied by .5 to work properly. (I may make it do this automatically in the future.)
-#         For example, to use this with a RectangleGenerator with size=10 (and generate only once without disappearing),
-#         set attributes=['tmb', "X%+-5", "Y%+-5", "S%*.5", "S%*.5", 0, 0, 0, 0, 0, 9999*60, 0]
-#
-#     :param arr: Binary array
-#     :param start_x: Initial x value (left)
-#     :param start_y: Initial y value (top)
-#     :param size: Size of each pixel
-#     :param attributes: Optional attributes if using objects other than the basic Rectangle.
-#     :param modifiers: Optional modifiers if using objects other than the basic Rectangle.
-#     :return: String of circloO objects (w/o header)
-#     """
-#
-#     if attributes is None:
-#         attributes = ['b', f"X%+{-size/2}", f"Y%+{-size/2}", "S%*.5", "S%*.5", 0]
-#     if modifiers is None:
-#         modifiers = []
-#
-#     objs = []
-#
-#     for i in range(len(arr)):
-#         for j in range(len(arr[i])):
-#             if arr[i][j] == 1:
-#                 xpos = j * size + start_x
-#                 ypos = i * size + start_y
-#
-#                 """example formatted string:
-#                 "X%+2%*4"
-#                 """
-#
-#                 temp_attrs = attributes.copy()
-#                 for a in range(len(attributes)):
-#                     att = temp_attrs[a]
-#                     if isinstance(att, str):
-#                         if att.startswith("X"):
-#                             temp_attrs[a] = _format_str(att, xpos, size)
-#                         elif att.startswith("Y"):
-#                             temp_attrs[a] = _format_str(att, ypos, size)
-#                         elif att.startswith("S"):
-#                             temp_attrs[a] = _format_str(att, size, size)
-#
-#                 objs.append(_O(temp_attrs, modifiers))
-#
-#     return objs
-#
-#
-# def _format_str(fstr: str, number, size):
-#     arguments = fstr.split("%")
-#     for arg in arguments:
-#         if arg.startswith("+"):
-#             number += float(arg[1:])
-#         elif arg.startswith("*"):
-#             number *= float(arg[1:])
-#         elif arg.startswith("-"):
-#             number -= float(arg[1:])
-#         elif arg.startswith("/"):
-#             number /= float(arg[1:])
-#     return number
-#
-#
-# # POSSIBLE CHANGE?
-# # def _format_str(fstr: str, number, size):
-# #     arguments = fstr.split("%")
-# #     for arg in arguments:
-# #         if arg.startswith("+"):
-# #             arg.replace("size", size)
-# #             number += float(arg[1:])
-# #
-# #         elif arg.startswith("*"):
-# #             arg.replace("size", size)
-# #             number *= float(arg[1:])
-# #
-# #     return number
-#
+from .object import CustomObject, Object
+from .tools import translate
+import circloo_helper.object_shapes as _os
+from circloo_helper.circloo_objects import Line, Arc, Curve
+
+
+class Pixels(CustomObject):
+    def __init__(self,
+                 arr: np.array,
+                 obj: Object,
+                 scale_x: float | int | None = None,
+                 scale_y: float | int | None = None,
+                 reduce_rectangles: bool = True):
+        """
+        Tiles an input Object according to an input 2D binary array.
+        :param arr:         2D binary array. Object is created in each cell with a 1, 0's are ignored
+        :param obj:         Object to be tiled. Pixel array starts at obj coordinates.
+        :param scale_x:     Distance between each object (x). If None, value is the width of obj. Default is None.
+        :param scale_y:     Distance between each object (y). If None, value is the height of obj. Default is None.
+        :param reduce_rectangles:   If True and obj is a Rectangle, pixel array is built with greedy rectangle
+                                    decomposition to reduce object count. Default is True.
+        """
+        super().__init__()
+
+        self.arr = np.asarray(arr)
+        self.obj: Object = obj
+
+        self.reduce_rectangles = reduce_rectangles
+
+        if scale_x is not None:
+            self.scale_x = scale_x
+            self._is_manually_scaled_x = True
+            self.reduce_rectangles = False  # Cannot merge rects if they are not touching
+        else:
+            self.scale_x = None
+            self._is_manually_scaled_x = False
+
+        if scale_y is not None:
+            self.scale_y = scale_y
+            self._is_manually_scaled_y = True
+            self.reduce_rectangles = False
+        else:
+            self.scale_y = None
+            self._is_manually_scaled_y = False
+
+    def _update_scale(self):
+        obj = self.obj
+
+        if isinstance(obj, _os.Connection):
+            raise ValueError("Connections are not tileable.")
+
+        if isinstance(obj, _os.Circle) or isinstance(obj, Arc):
+            scale_x = scale_y = obj.radius * 2
+        elif isinstance(obj, _os.Rectangle):
+            scale_x = obj.width
+            scale_y = obj.height
+        elif isinstance(obj, _os.Triangle):
+            scale_x = max(obj.x1, obj.x2, obj.x3) - min(obj.x1, obj.x2, obj.x3)
+            scale_y = max(obj.y1, obj.y2, obj.y3) - min(obj.y1, obj.y2, obj.y3)
+        elif isinstance(obj, Line):
+            scale_x = max(obj.x1, obj.x2) - min(obj.x1, obj.x2)
+            scale_y = max(obj.y1, obj.y2) - min(obj.y1, obj.y2)
+            if scale_x == 0:
+                scale_x = obj.thickness * 2
+            if scale_y == 0:
+                scale_y = obj.thickness * 2
+        elif isinstance(obj, Curve):
+            ### TODO: scale as bounding box (circumrectangle) of curve
+            scale_x = abs(obj.start_x - obj.end_x)
+            scale_y = abs(obj.start_y - obj.end_y)
+        else:
+            # Object does not have a width or height, use a default of 50.
+            scale_x = scale_y = 50
+
+        if not self._is_manually_scaled_x:
+            self.scale_x = scale_x
+        if not self._is_manually_scaled_y:
+            self.scale_y = scale_y
+
+    def build_objs(self):
+        super().build_objs()
+        self._update_scale()
+
+        if self.reduce_rectangles and isinstance(self.obj, _os.Rectangle):
+            return self._reduced_build()
+
+        for i in range(len(self.arr)):
+            for j in range(len(self.arr[i])):
+                if self.arr[i][j] == 1:
+                    x = j * self.scale_x
+                    y = i * self.scale_y
+                    self._obj_cache.append(translate(self.obj, x, y))
+
+        return self._obj_cache
+
+    def _reduced_build(self):
+        """Build the pixel array using greedy rectangle decomposition to reduce object count."""
+        if not isinstance(self.obj, _os.Rectangle):
+            raise ValueError("Cannot use greedy rectangle decomposition on non-Rectangles.")
+
+        arr = self.arr
+
+        # Build reduction matrix.
+
+        red_mat = np.zeros((*arr.shape, 2))
+
+        for i in range(len(arr)):
+            point_hor = None
+
+            for j in range(len(arr[i])):
+                cur = arr[i, j]
+
+                if cur == 1:
+                    if point_hor is None:
+                        point_hor = (i, j, 0)
+                        red_mat[point_hor] = 1
+                    else:
+                        red_mat[point_hor] += 1
+
+                else:
+                    point_hor = None
+
+        for j in range(len(arr[0])):
+            point_vert = None
+
+            for i in range(len(arr)):
+                cur = red_mat[i, j, 0]
+
+                if cur > 0:
+                    if point_vert is None:
+                        point_vert = (i, j)
+                        red_mat[(*point_vert, 1)] = 1
+                    else:
+                        if cur == red_mat[(*point_vert, 0)]:
+                            red_mat[(*point_vert, 1)] += 1
+                            red_mat[i, j, 0] = 0
+                        else:
+                            point_vert = (i, j)
+                            red_mat[(*point_vert, 1)] = 1
+                else:
+                    point_vert = None
+
+        # Print reduction matrix (debug)
+        # for i in range(len(red_mat)):
+        #     for j in range(len(red_mat[i])):
+        #         print("(", end='')
+        #         for k in range(len(red_mat[i][j])):
+        #             # print(red_mat[i][j][k], ' ', end='')
+        #             print(f"{red_mat[i][j][k]}, ", end='')
+        #         print(") ", end='')
+        #     print()
+
+        # Build object cache.
+
+        for i in range(len(red_mat)):
+            for j in range(len(red_mat[i])):
+                if all(red_mat[i, j] > 0):
+                    x = j * self.scale_x
+                    y = i * self.scale_y
+                    new_obj = copy(self.obj)
+                    new_obj.width *= red_mat[i, j, 0]
+                    new_obj.height *= red_mat[i, j, 1]
+                    self._obj_cache.append(translate(new_obj, x, y))
+
+        return self._obj_cache
