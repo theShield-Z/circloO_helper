@@ -44,7 +44,7 @@ class CustomObject:
     def __init__(self):
         super().__init__()
         self._id: int = -1
-        self._obj_cache: list[Object] = list()
+        self._obj_cache: list[Object | 'CustomObject'] = list()
 
     def __str__(self):
         return self._to_str(enumeration=True)

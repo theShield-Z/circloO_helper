@@ -6,7 +6,7 @@ from .object import Object
 import circloo_helper.object_shapes as _os
 from .circloo_objects import Line, Arc, Curve, Dummy, Portal
 
-__all__ = ["polar", "pivot", "translate", "scale", "push_to_android", "combine"]
+__all__ = ["polar", "pivot", "translate", "scale", "dimensions", "centroid", "push_to_android", "combine"]
 
 
 def polar(r, theta, start_x=1500, start_y=1500, in_degrees=True):
@@ -329,6 +329,84 @@ def scale(obj: Object, by_x, by_y=None):
         pass
 
     return new_obj
+
+
+def dimensions(obj: Object):
+    """Return the dimensions of an Object's bounding box as (width, height)."""
+    if isinstance(obj, _os.Connection):
+        raise TypeError("Connections have no dimensions.")
+
+    if isinstance(obj, _os.Circle):
+        width = height = obj.radius * 2 + 1     # actual circle radius is .5 greater than written radius
+    elif isinstance(obj, Arc):
+        ### TODO: possibly alter this for the minimum circumrectangle for the given start/end angles
+        width = height = (obj.radius + obj.thickness) * 2
+    elif isinstance(obj, _os.Rectangle):
+        width = obj.width
+        height = obj.height
+    elif isinstance(obj, _os.Triangle):
+        width = max(obj.x1, obj.x2, obj.x3) - min(obj.x1, obj.x2, obj.x3)
+        height = max(obj.y1, obj.y2, obj.y3) - min(obj.y1, obj.y2, obj.y3)
+    elif isinstance(obj, Line):
+        width = max(obj.x1, obj.x2) - min(obj.x1, obj.x2)
+        height = max(obj.y1, obj.y2) - min(obj.y1, obj.y2)
+        if width == 0:
+            width = obj.thickness * 2
+        if height == 0:
+            height = obj.thickness * 2
+    elif isinstance(obj, Curve):
+        ### TODO: scale as bounding box (circumrectangle) of curve
+        width = abs(obj.start_x - obj.end_x)
+        height = abs(obj.start_y - obj.end_y)
+    elif isinstance(obj, _os.Collectable):
+        width = height = 50
+    elif isinstance(obj, Portal):
+        width = height = 40.5
+    elif isinstance(obj, _os.Player):
+        width = height = obj.size * 64 + 1
+    else:
+        raise TypeError(f"Object {type(obj)} has no dimensions.")
+    return width, height
+
+
+def centroid(obj: Object):
+    """Return the (x, y) coordinate of an Object's centroid (geometric center)."""
+
+    if (isinstance(obj, _os.Circle)
+            or isinstance(obj, _os.Player)
+            or isinstance(obj, _os.Collectable)
+            or isinstance(obj, Dummy)):
+        cx = obj.x
+        cy = obj.y
+
+    elif isinstance(obj, _os.Rectangle):
+        cx = obj.x + obj.width / 2
+        cy = obj.y + obj.height / 2
+
+    elif isinstance(obj, _os.Triangle):
+        cx = (obj.x1 + obj.x2 + obj.x3) / 3
+        cy = (obj.y1 + obj.y2 + obj.y3) / 3
+
+    elif isinstance(obj, Line):
+        cx = (obj.x1 + obj.x2) / 2
+        cy = (obj.y1 + obj.y2) / 2
+
+    elif isinstance(obj, Arc):
+        cx = obj.center_x
+        cy = obj.center_y
+
+    elif isinstance(obj, Curve):
+        cx = (obj.start_x + obj.ctr1_x + obj.ctr2_x + obj.end_x) / 4
+        cy = (obj.start_y + obj.ctr1_y + obj.ctr2_y + obj.end_y) / 4
+
+    elif isinstance(obj, Portal):
+        cx = obj.portal_x
+        cy = obj.portal_y
+
+    else:
+        raise TypeError(f"Object {type(obj)} does not have a centroid.")
+
+    return cx, cy
 
 
 def push_to_android(file_path, destination='/sdcard'):

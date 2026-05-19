@@ -2,9 +2,8 @@ import numpy as np
 from copy import copy
 
 from .object import CustomObject, Object
-from .tools import translate
+from .tools import translate, dimensions
 import circloo_helper.object_shapes as _os
-from circloo_helper.circloo_objects import Line, Arc, Curve
 
 
 class Pixels(CustomObject):
@@ -47,33 +46,7 @@ class Pixels(CustomObject):
             self._is_manually_scaled_y = False
 
     def _update_scale(self):
-        obj = self.obj
-
-        if isinstance(obj, _os.Connection):
-            raise ValueError("Connections are not tileable.")
-
-        if isinstance(obj, _os.Circle) or isinstance(obj, Arc):
-            scale_x = scale_y = obj.radius * 2
-        elif isinstance(obj, _os.Rectangle):
-            scale_x = obj.width
-            scale_y = obj.height
-        elif isinstance(obj, _os.Triangle):
-            scale_x = max(obj.x1, obj.x2, obj.x3) - min(obj.x1, obj.x2, obj.x3)
-            scale_y = max(obj.y1, obj.y2, obj.y3) - min(obj.y1, obj.y2, obj.y3)
-        elif isinstance(obj, Line):
-            scale_x = max(obj.x1, obj.x2) - min(obj.x1, obj.x2)
-            scale_y = max(obj.y1, obj.y2) - min(obj.y1, obj.y2)
-            if scale_x == 0:
-                scale_x = obj.thickness * 2
-            if scale_y == 0:
-                scale_y = obj.thickness * 2
-        elif isinstance(obj, Curve):
-            ### TODO: scale as bounding box (circumrectangle) of curve
-            scale_x = abs(obj.start_x - obj.end_x)
-            scale_y = abs(obj.start_y - obj.end_y)
-        else:
-            # Object does not have a width or height, use a default of 50.
-            scale_x = scale_y = 50
+        scale_x, scale_y = dimensions(self.obj)
 
         if not self._is_manually_scaled_x:
             self.scale_x = scale_x
@@ -99,7 +72,7 @@ class Pixels(CustomObject):
     def _reduced_build(self):
         """Build the pixel array using greedy rectangle decomposition to reduce object count."""
         if not isinstance(self.obj, _os.Rectangle):
-            raise ValueError("Cannot use greedy rectangle decomposition on non-Rectangles.")
+            raise TypeError("Cannot use greedy rectangle decomposition on non-Rectangles.")
 
         arr = self.arr
 

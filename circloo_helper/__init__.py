@@ -12,7 +12,7 @@ import circloo_helper.custom_objects
 
 from .tools import *
 from .pixel_builder import Pixels
-# from .text import write, create_write_character, write_
+from .text import Text
 
 # try:
 #     from .plotters import plot_points, plot_image
