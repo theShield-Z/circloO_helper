@@ -2,7 +2,6 @@ from copy import copy
 from typing import Callable
 import numpy as np
 import cv2 as cv
-import numba
 
 from .object import CustomObject
 from .object_types import Generator
@@ -110,56 +109,3 @@ class CHVideo(CustomObject):
 
         self._is_already_built = True
         return self._obj_cache
-
-    @staticmethod
-    @numba.njit
-    def _rectangle_decomposer(arr: np.array):
-        """
-        Decomposes a 3D numpy binary array into the minimum number of spanning rectangles
-        using a depth->width->height greedy algorithm
-        :return: Generator that yields each rectangle as ((x, y, z), (width, height, depth))
-        """
-        arr = arr.copy()
-        a, b, c = arr.shape
-        # a -> number of frames
-        # b -> height of frame
-        # c -> width of frame
-
-        for j in range(b):
-            for k in range(c):
-                for i in range(a):
-
-                    cur = arr[i, j, k]
-
-                    if cur == 0:
-                        continue
-
-                    # Find depth.
-                    depth = 1
-                    while i + depth < a and arr[i + depth, j, k] > 0:
-                        depth += 1
-
-                    # Find width.
-                    width = 1
-                    while k + width < c:
-                        if np.all(arr[i:i + depth, j, k + width]):
-                            width += 1
-                        else:
-                            break
-
-                    # Find height.
-                    height = 1
-                    while j + height < b:
-                        if np.all(arr[i:i + depth,
-                                      j + height,
-                                      k:k + width]):
-                            height += 1
-                        else:
-                            break
-
-                    yield (k, j, i), (width, height, depth)
-
-                    # Clear the determined region so that it is not processed again.
-                    arr[i: i + depth,
-                        j: j + height,
-                        k: k + width] = 0
