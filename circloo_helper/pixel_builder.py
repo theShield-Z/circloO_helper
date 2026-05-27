@@ -1,9 +1,10 @@
 import numpy as np
-from copy import copy
+import numba
 
 from .object import CustomObject, Object
 from .tools import translate, dimensions
-import circloo_helper.object_shapes as _os
+from .object_shapes import Rectangle
+from .object_types import Generator
 
 
 class Pixels(CustomObject):
@@ -15,7 +16,8 @@ class Pixels(CustomObject):
                  reduce_rectangles: bool = True):
         """
         Tiles an input Object according to an input 2D binary array.
-        :param arr:         2D binary array. Object is created in each cell with a 1, 0's are ignored
+        :param arr:         2D or 3D binary array. Object is created in each cell with a 1, 0's are ignored.
+                                If 3D, third dimension is time (only usable for Generator type objects)
         :param obj:         Object to be tiled. Pixel array starts at obj coordinates.
         :param scale_x:     Distance between each object (x). If None, value is the width of obj. Default is None.
         :param scale_y:     Distance between each object (y). If None, value is the height of obj. Default is None.
@@ -53,89 +55,211 @@ class Pixels(CustomObject):
         if not self._is_manually_scaled_y:
             self.scale_y = scale_y
 
+    # def build_objs(self):
+    #     super().build_objs()
+    #     self._update_scale()
+    #
+    #     if self.reduce_rectangles and isinstance(self.obj, _os.Rectangle):
+    #         return self._reduced_build()
+    #
+    #     for i in range(len(self.arr)):
+    #         for j in range(len(self.arr[i])):
+    #             if self.arr[i][j] == 1:
+    #                 x = j * self.scale_x
+    #                 y = i * self.scale_y
+    #                 self._obj_cache.append(translate(self.obj, x, y))
+    #
+    #     return self._obj_cache
+
     def build_objs(self):
         super().build_objs()
         self._update_scale()
 
-        if self.reduce_rectangles and isinstance(self.obj, _os.Rectangle):
-            return self._reduced_build()
+        if len(self.arr.shape) == 2:
+            return self._build_2d()
 
-        for i in range(len(self.arr)):
-            for j in range(len(self.arr[i])):
-                if self.arr[i][j] == 1:
-                    x = j * self.scale_x
-                    y = i * self.scale_y
-                    self._obj_cache.append(translate(self.obj, x, y))
+        elif len(self.arr.shape) == 3:
+            return self._build_3d()
+
+        else:
+            raise ValueError("Pixel array must be either 2D or 3D")
+
+    def _build_2d(self):
+        if self.reduce_rectangles and isinstance(self.obj, Rectangle):
+            rects = self._rectangle_decomposer_2d(self.arr)
+            for rect in rects:
+                (x, y), (width, height) = rect
+
+                obj = translate(self.obj, x * self.scale_x, y * self.scale_y)
+                obj.width *= width
+                obj.height *= height
+
+                self._obj_cache.append(obj)
+
+        else:
+            for i in range(len(self.arr)):
+                for j in range(len(self.arr[i])):
+                    if self.arr[i][j] == 1:
+                        x = j * self.scale_x
+                        y = i * self.scale_y
+                        self._obj_cache.append(translate(self.obj, x, y))
 
         return self._obj_cache
 
-    def _reduced_build(self):
-        """Build the pixel array using greedy rectangle decomposition to reduce object count."""
-        if not isinstance(self.obj, _os.Rectangle):
-            raise TypeError("Cannot use greedy rectangle decomposition on non-Rectangles.")
+    def _build_3d(self):
 
-        arr = self.arr
+        if not isinstance(self.obj, Generator):
+            raise TypeError("Can only build a 3D pixel array with circloO Generator objects")
 
-        # Build reduction matrix.
+        if self.reduce_rectangles:
 
-        red_mat = np.zeros((*arr.shape, 2))
+            if isinstance(self.obj, Rectangle):
+                rects = self._rectangle_decomposer_3d(self.arr)
+                for rect in rects:
+                    (x, y, f), (width, height, duration) = rect
 
-        for i in range(len(arr)):
-            point_hor = None
+                    obj = translate(self.obj, x * self.scale_x, y * self.scale_y)
+                    obj.width *= width
+                    obj.height *= height
+                    obj.init_delay += f * obj.disappear_after
+                    obj.disappear_after *= duration
+                    obj.wait_between = 9999
 
-            for j in range(len(arr[i])):
-                cur = arr[i, j]
+                    self._obj_cache.append(obj)
 
-                if cur == 1:
-                    if point_hor is None:
-                        point_hor = (i, j, 0)
-                        red_mat[point_hor] = 1
+            else:
+                # Reduce depth/duration only.
+                #       This is the same algorithm as _rectangle_decomposer_3d, but only applied depth-wise.
+                arr = self.arr.copy()
+                a, b, c = arr.shape
+                for j in range(b):
+                    for k in range(c):
+                        for i in range(a):
+
+                            cur = arr[i, j, k]
+
+                            if cur == 0:
+                                continue
+
+                            depth = 1
+                            while i + depth < a and arr[i + depth, j, k] > 0:
+                                depth += 1
+
+                            obj = translate(self.obj, k * self.scale_x, j * self.scale_y)
+                            obj.init_delay += i * obj.disappear_after
+                            obj.disappear_after *= depth
+                            obj.wait_between = 9999
+
+                            self._obj_cache.append(obj)
+
+                            arr[i: i + depth, j, k] = 0
+
+        else:
+            # No reductions.
+            a, b, c = self.arr.shape
+            for j in range(b):
+                for k in range(c):
+                    for i in range(a):
+                        if self.arr[i][j][k] == 1:
+                            obj = translate(self.obj, k * self.scale_x, j * self.scale_y)
+                            obj.init_delay += i * obj.disappear_after
+                            obj.wait_between = 9999
+
+                            self._obj_cache.append(obj)
+
+        return self._obj_cache
+
+    @staticmethod
+    @numba.njit
+    def _rectangle_decomposer_2d(arr: np.array):
+        """
+        Decomposes a 2D numpy binary array into the minimum number of spanning rectangles
+            using a width->height greedy algorithm
+        :return: Generator that yields each rectangle as ((x, y), (width, height))
+        """
+        arr = arr.copy()
+        b, c = arr.shape
+        # a -> number of frames
+        # b -> height of frame
+        # c -> width of frame
+
+        for j in range(b):
+            for k in range(c):
+                cur = arr[j, k]
+
+                if cur == 0:
+                    continue
+
+                # Find width.
+                width = 1
+                while k + width < c:
+                    if np.all(arr[j, k + width]):
+                        width += 1
                     else:
-                        red_mat[point_hor] += 1
+                        break
 
-                else:
-                    point_hor = None
-
-        for j in range(len(arr[0])):
-            point_vert = None
-
-            for i in range(len(arr)):
-                cur = red_mat[i, j, 0]
-
-                if cur > 0:
-                    if point_vert is None:
-                        point_vert = (i, j)
-                        red_mat[(*point_vert, 1)] = 1
+                # Find height.
+                height = 1
+                while j + height < b:
+                    if np.all(arr[j + height, k:k + width]):
+                        height += 1
                     else:
-                        if cur == red_mat[(*point_vert, 0)]:
-                            red_mat[(*point_vert, 1)] += 1
-                            red_mat[i, j, 0] = 0
+                        break
+
+                yield (k, j), (width, height)
+
+                # Clear the determined region so that it is not processed again.
+                arr[j: j + height, k: k + width] = 0
+
+    @staticmethod
+    @numba.njit
+    def _rectangle_decomposer_3d(arr: np.array):
+        """
+        Decomposes a 3D numpy binary array into the minimum number of spanning rectangles
+            using a depth->width->height greedy algorithm
+        :return: Generator that yields each rectangle as ((x, y, z), (width, height, depth))
+        """
+        arr = arr.copy()
+        a, b, c = arr.shape
+        # a -> number of frames
+        # b -> height of frame
+        # c -> width of frame
+
+        for j in range(b):
+            for k in range(c):
+                for i in range(a):
+
+                    cur = arr[i, j, k]
+
+                    if cur == 0:
+                        continue
+
+                    # Find depth.
+                    depth = 1
+                    while i + depth < a and arr[i + depth, j, k] > 0:
+                        depth += 1
+
+                    # Find width.
+                    width = 1
+                    while k + width < c:
+                        if np.all(arr[i:i + depth, j, k + width]):
+                            width += 1
                         else:
-                            point_vert = (i, j)
-                            red_mat[(*point_vert, 1)] = 1
-                else:
-                    point_vert = None
+                            break
 
-        # Print reduction matrix (debug)
-        # for i in range(len(red_mat)):
-        #     for j in range(len(red_mat[i])):
-        #         print("(", end='')
-        #         for k in range(len(red_mat[i][j])):
-        #             # print(red_mat[i][j][k], ' ', end='')
-        #             print(f"{red_mat[i][j][k]}, ", end='')
-        #         print(") ", end='')
-        #     print()
+                    # Find height.
+                    height = 1
+                    while j + height < b:
+                        if np.all(arr[i:i + depth,
+                                      j + height,
+                                      k:k + width]):
+                            height += 1
+                        else:
+                            break
 
-        # Build object cache.
+                    yield (k, j, i), (width, height, depth)
 
-        for i in range(len(red_mat)):
-            for j in range(len(red_mat[i])):
-                if all(red_mat[i, j] > 0):
-                    x = j * self.scale_x
-                    y = i * self.scale_y
-                    new_obj = copy(self.obj)
-                    new_obj.width *= red_mat[i, j, 0]
-                    new_obj.height *= red_mat[i, j, 1]
-                    self._obj_cache.append(translate(new_obj, x, y))
-
-        return self._obj_cache
+                    # Clear the determined region so that it is not processed again.
+                    arr[i: i + depth,
+                        j: j + height,
+                        k: k + width] = 0

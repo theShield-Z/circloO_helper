@@ -2,7 +2,6 @@ from typing import Callable
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
-import numba
 
 from .pixel_builder import Pixels
 from .object import Object, CustomObject

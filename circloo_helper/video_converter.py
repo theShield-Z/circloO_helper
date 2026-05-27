@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Callable
 import numpy as np
 import cv2 as cv
@@ -5,9 +6,8 @@ import numba
 
 from .object import CustomObject
 from .object_types import Generator
-from .object_shapes import Rectangle
-from .tools import translate, dimensions
 from .dithering import LINE_DITHER_8X8, ordered_dither
+from .pixel_builder import Pixels
 
 
 class CHVideo(CustomObject):
@@ -24,7 +24,6 @@ class CHVideo(CustomObject):
         self._filepath = filepath
 
         self._obj = obj
-        self._obj.wait_between = 9999
 
         self._resolution = resolution
         self._fps = fps
@@ -91,19 +90,11 @@ class CHVideo(CustomObject):
                 pass
                 # cv.waitKey(0)
 
-        # Append to obj_cache.
-        obj_width, obj_height = dimensions(self._obj)
-        for rect in self._rectangle_decomposer(np.asarray(processed_frames)):
-            (x, y, f), (width, height, duration) = rect
-
-            obj = translate(self._obj, x * obj_width, y * obj_height)
-            obj.disappear_after = frame_duration * duration
-            obj.init_delay = f * frame_duration
-
-            if isinstance(obj, Rectangle):
-                obj.width *= width
-                obj.height *= height
-            self._obj_cache.append(obj)
+        # Convert to Objects
+        obj = copy(self._obj)
+        obj.disappear_after = frame_duration
+        obj.init_delay = frame_duration
+        self._obj_cache.extend(Pixels(processed_frames, obj).build_objs())
 
         self._is_already_built = True
         return self._obj_cache

@@ -447,7 +447,7 @@ class Text(CustomObject):
     def __init__(self,
                  text: str,
                  obj: Object,
-                 spacing: float | int = 0):
+                 spacing: float | int = 1):
         """
         Convert a text string into circloO Objects. Allows use of \n, \r, and \t.
         :param text:    str to be converted.
