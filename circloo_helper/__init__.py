@@ -15,6 +15,7 @@ from .pixel_builder import Pixels
 from .text import Text
 
 from .image_converter import CHImage
+from .video_converter import CHVideo
 
 # try:
 #     from .plotters import plot_points, plot_image

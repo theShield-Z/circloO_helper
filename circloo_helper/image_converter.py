@@ -14,7 +14,7 @@ class CHImage(CustomObject):
                  filepath: str,
                  obj: Object,
                  downsample_factor: int,
-                 threshold: int = .5,
+                 threshold: int | float = .5,
                  channel_weights: tuple[int | float, int | float, int | float] = (1, 1, 1),
                  show_img: bool = True):
         """
@@ -64,7 +64,7 @@ class CHImage(CustomObject):
         return self._obj_cache
 
     @staticmethod
-    @numba.jit
+    @numba.njit
     def floyd_steinberg(image: np.array):
         """Floyd-Steinberg dithering algorithm, adjusted to give more contrast.
         https://research.cs.wisc.edu/graphics/Courses/559-s2004/docs/floyd-steinberg.pdf"""

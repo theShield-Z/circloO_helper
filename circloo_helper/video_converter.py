@@ -1,13 +1,17 @@
-"""Convert videos into circloO objects."""
+from copy import copy
+import numpy as np
+import cv2 as cv
+import numba
 
-import numpy as _np
-import cv2 as _cv
-from .objects import RectangleGenerator as _Gen
+from .object import CustomObject
+from .object_types import Generator
+from .object_shapes import Rectangle
+from .tools import translate, dimensions
 
 
 # DITHERING PATTERNS ###################################################################################################
 
-BAYER_MATRIX_8X8 = (1 / 64) * _np.array([
+BAYER_MATRIX_8X8 = (1 / 64) * np.array([
     [ 0, 48, 12, 60,  3, 51, 15, 63],
     [32, 16, 44, 28, 35, 19, 47, 31],
     [ 8, 56,  4, 52, 11, 59,  7, 55],
@@ -18,7 +22,7 @@ BAYER_MATRIX_8X8 = (1 / 64) * _np.array([
     [42, 26, 38, 22, 41, 25, 37, 21]
     ])
 
-LINE_DITHER_8X8 = (1 / 64) * _np.array([
+LINE_DITHER_8X8 = (1 / 64) * np.array([
     [ 0,  1,  2,  3,  4,  5,  6,  7],
     [32, 33, 34, 35, 36, 37, 38, 39],
     [16, 17, 18, 19, 20, 21, 22, 23],
@@ -29,7 +33,7 @@ LINE_DITHER_8X8 = (1 / 64) * _np.array([
     [56, 57, 58, 59, 60, 61, 62, 63],
 ])
 
-DOTTED_LINE_DITHER_8X8 = (1 / 64) * _np.array([
+DOTTED_LINE_DITHER_8X8 = (1 / 64) * np.array([
     [ 0, 16,  1, 17,  2, 18,  3, 19],
     [32, 48, 33, 49, 34, 50, 35, 51],
     [ 8, 24,  9, 25, 10, 26, 11, 27],
@@ -41,244 +45,169 @@ DOTTED_LINE_DITHER_8X8 = (1 / 64) * _np.array([
 ])
 
 
-# MAIN FUNCTION ########################################################################################################
+class CHVideo(CustomObject):
+    def __init__(self,
+                 filepath: str,
+                 obj: Generator,
+                 resolution: tuple[int, int],
+                 fps: int | float,
+                 threshold: int | float = .5,
+                 channel_weights: tuple[int | float, int | float, int | float] = (1, 1, 1),
+                 show_img: bool = True):
+        super().__init__()
+        self._filepath = filepath
 
-def video_to_circloo(video_path: str, frame_size: tuple[int, int], frame_skip: int, fps: float,
-                     start_x: float, start_y: float, size: float = 1,
-                     threshold: float = .5, channel_weights: tuple[float, float, float] = (1, 1, 1),
-                     dither_pattern: _np.array = LINE_DITHER_8X8, start_off: bool = False,
-                     show_img: bool = False, wait_key: int = 1,
-                     turn_off_noanim: bool = False):
-    """
-    Converts a video into circloO objects via dithering & grayscale conversion.
-    :param video_path:          Path to video for conversion.
-    :param frame_size:          Width x Height of video after conversion.
-    :param frame_skip:          Number of frames to skip. 1 for no change.
-    :param fps:                 FPS of video after conversion.
-    :param start_x:             X coordinate of in-game display.
-    :param start_y:             Y coordinate of in-game display.
-    :param size:                Size of each pixel in-game; default is 1.
-    :param threshold:           Threshold for grayscale conversion; default is 0.5
-    :param channel_weights:     Weights for RGB channels; default is (1, 1, 1).
-    :param dither_pattern:      Pattern for dithering video; None for no dithering; default is BAYER_MATRIX_8X8.
-    :param start_off:           If True, the video does not start playing when the level is started.
-    :param show_img:            If True, displays video as it is converted; faster when False; default is False
-    :param wait_key:            Time to wait between displaying of each frame; default is 1; automatically set to 0 if show_img is False
-    :param turn_off_noanim:     Turns off noanim; somewhat reduces file size, but makes end result less viewable
-    :return:                List of circloO objects
-    """
+        self._obj = obj
+        self._obj.wait_between = 9999
 
-    if not show_img:
-        # Set wait_key to 0 if not displaying the video
-        #   wait_key is necessary for displaying video, but slows the program significantly when not needed.
-        wait_key = 0
+        self._resolution = resolution
+        self._fps = fps
 
-    # Open video.
-    cap = _cv.VideoCapture(video_path)
-    total_frames = cap.get(_cv.CAP_PROP_FRAME_COUNT)
+        self._threshold = threshold
+        self._channel_weights = channel_weights
+        self._show_img = show_img
 
-    if not cap.isOpened():
-        raise Exception("Cannot open video file")
+        self._is_already_built = False
 
-    frame_count = 0
-    processed_frames = []
+    def build_objs(self):
+        if self._is_already_built:
+            return self._obj_cache
 
-    # Loop through video frames.
-    while True:
-        ret, frame = cap.read()
+        super().build_objs()
 
-        if not ret:
-            print("End of video or can't reach frame. Converting to circloO...")
-            break
+        cap = cv.VideoCapture(self._filepath)
+        if not cap.isOpened():
+            raise ValueError(f"Can not read video at {self._filepath}")
 
-        if frame_count % frame_skip == 0:
-            # Process frame.
-            small_frame = _cv.resize(frame, dsize=frame_size)
-            image = small_frame.astype(_np.float32) / 255
-            dithered_image = ordered_dither(image, dither_pattern)
-            binary_image = binarize(dithered_image, threshold, channel_weights)
-            reduced_image = greedy_decomposition(binary_image)
-            processed_frames.append(reduced_image)
+        total_source_frames = cap.get(cv.CAP_PROP_FRAME_COUNT)
+        source_fps = cap.get(cv.CAP_PROP_FPS)
+        source_duration = total_source_frames / source_fps
 
-            if show_img:
-                _cv.imshow("circloO Video is Processing...", (1 - binary_image).astype(_np.uint8) * 255)
+        total_target_frames = int(source_duration * self._fps)
+        frame_duration = source_duration / total_target_frames
+
+        processed_frames = []
+
+        for target_frame_idx in range(total_target_frames):
+            # Map target frame to source frame.
+            source_frame_idx = int(target_frame_idx * (source_fps / self._fps))
+
+            if source_frame_idx >= total_source_frames:
+                # Ensure video length is not overshot.
+                break
+
+            # Jump to mapped source frame.
+            cap.set(cv.CAP_PROP_POS_FRAMES, source_frame_idx)
+
+            ret, frame = cap.read()
+
+            if not ret:
+                break
+
+            # Processing.
+            frame_rgb = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+            frame_resized = cv.resize(frame_rgb, self._resolution)
+            data = frame_resized.astype(np.float32) / 255
+            data_dithered = self.ordered_dither(data)
+            data_avg = np.average(data_dithered[:, :, :3], axis=2, weights=np.asarray(self._channel_weights))
+            pix_arr = np.where(data_avg >= self._threshold, 0, 1)
+
+            processed_frames.append(pix_arr)
+
+            # Display video as it processes.
+            if self._show_img:
+                cv.imshow("circloO Video is Processing...", (1 - pix_arr).astype(np.uint8) * 255)
+                cv.waitKey(1)
+                # cv.waitKey(int(frame_duration * 1000))    # Show video in real time
             else:
-                print(f"Processing... ({frame_count}/{total_frames})")
+                pass
+                # cv.waitKey(0)
 
-        _cv.waitKey(wait_key)
-        frame_count += 1
+        # Append to obj_cache.
+        obj_width, obj_height = dimensions(self._obj)
+        for rect in self._rectangle_decomposer(np.asarray(processed_frames)):
+            (x, y, f), (width, height, duration) = rect
 
-    cap.release()
-    _cv.destroyAllWindows()
+            obj = translate(self._obj, x * obj_width, y * obj_height)
+            obj.disappear_after = frame_duration * duration
+            obj.init_delay = f * frame_duration
 
-    time_reduced = greedy_time(processed_frames)
-    objs = reduced_build(time_reduced, start_x, start_y, size, fps, start_off, turn_off_noanim=turn_off_noanim)
+            if isinstance(obj, Rectangle):
+                obj.width *= width
+                obj.height *= height
+            self._obj_cache.append(obj)
 
-    print(f"Successfully converted {video_path} to circloO objects.")
+        self._is_already_built = True
+        return self._obj_cache
 
-    return objs
+    @staticmethod
+    def ordered_dither(image: np.array, pattern: np.array = BAYER_MATRIX_8X8):
+        """Ordered Dithering using pattern matrix."""
 
+        if pattern is None:
+            return image
 
-# IMAGE PROCESSING #####################################################################################################
+        height, width, _ = image.shape
 
-def ordered_dither(image: _np.array, pattern: _np.array = BAYER_MATRIX_8X8):
-    """Ordered Dithering using pattern matrix."""
+        threshold_map = np.tile(
+            pattern,
+            (height // pattern.shape[0] + 1, width // pattern.shape[1] + 1)
+        )[:height, :width]
+        threshold_map = threshold_map[:, :, np.newaxis]
 
-    if pattern is None:
-        return image
+        dithered_image = (image > threshold_map)
 
-    height, width, _ = image.shape
+        return dithered_image
 
-    threshold_map = _np.tile(pattern, (height // pattern.shape[0] + 1, width // pattern.shape[1] + 1))[:height, :width]
-    threshold_map = threshold_map[:, :, _np.newaxis]
+    @staticmethod
+    @numba.njit
+    def _rectangle_decomposer(arr: np.array):
+        """
+        Decomposes a 3D numpy binary array into the minimum number of spanning rectangles
+        using a depth->width->height greedy algorithm
+        :return: Generator that yields each rectangle as ((x, y, z), (width, height, depth))
+        """
+        arr = arr.copy()
+        a, b, c = arr.shape
+        # a -> number of frames
+        # b -> height of frame
+        # c -> width of frame
 
-    dithered_image = (image > threshold_map)
+        for j in range(b):
+            for k in range(c):
+                for i in range(a):
 
-    return dithered_image
+                    cur = arr[i, j, k]
 
+                    if cur == 0:
+                        continue
 
-def binarize(arr: _np.array, threshold: float = 0.5, channel_weights: tuple[float, float, float] = (1, 1, 1)):
-    """Convert float32 image to binary grayscale + extra channels for reduction algorithms."""
-    avg = _np.dot(arr[:, :, :3], channel_weights) / sum(channel_weights)
-    binary_image = (avg <= threshold).astype(_np.float32)
-    return binary_image
+                    # Find depth.
+                    depth = 1
+                    while i + depth < a and arr[i + depth, j, k] > 0:
+                        depth += 1
 
+                    # Find width.
+                    width = 1
+                    while k + width < c:
+                        if np.all(arr[i:i + depth, j, k + width]):
+                            width += 1
+                        else:
+                            break
 
-# CONVERSION TO CIRCLOO ################################################################################################
+                    # Find height.
+                    height = 1
+                    while j + height < b:
+                        if np.all(arr[i:i + depth,
+                                      j + height,
+                                      k:k + width]):
+                            height += 1
+                        else:
+                            break
 
-def greedy_decomposition(arr: _np.array):
-    """Reduce a binary image array into an array corresponding to the length & width of each pixel."""
-    temp_arr = arr.copy()
-    arr = _np.zeros((arr.shape[0], arr.shape[1], 3))
-    arr[:, :, 0] = temp_arr
+                    yield (k, j, i), (width, height, depth)
 
-    # Reduce pixels by merging side-to-side length.
-    for i in range(arr.shape[0]):
-        point = None
-
-        for j in range(arr.shape[1]):
-            cur = arr[i, j, 0]
-
-            if cur == 1:
-                if point is None:
-                    point = (i, j, 0)
-                else:
-                    arr[point] += 1
-                    arr[i, j, 0] = 0
-            else:
-                point = None
-
-    # Merge vertically if equal horizontal length.
-    for j in range(arr.shape[1]):
-        point = None
-        check_val = -1
-
-        for i in range(arr.shape[0]):
-            cur = arr[i, j, 0]
-
-            if cur == 0:
-                # Zero value, reset checker values
-                point = None
-                check_val = -1
-
-            else:
-                if point is None and check_val == -1:
-                    # First nonzero point, store checker values
-                    point = (i, j)
-                    check_val = arr[point[0], point[1], 0]
-                    arr[i, j, 1] = 1
-
-                elif arr[i, j, 0] == check_val:
-                    # Point below checker is equal, increase at check value, set cur to 0
-                    arr[point[0], point[1], 1] += 1
-                    arr[i, j, :] = 0
-
-                else:
-                    # Point below checker is new nonzero value, store new checker values
-                    point = (i, j)
-                    check_val = arr[point[0], point[1], 0]
-                    arr[i, j, 1] = 1
-
-    return arr
-
-
-def greedy_time(frames: list[_np.array, ...]):
-    """Further reduce a list of greedily-reduced frames temporally."""
-
-    for r in range(frames[0].shape[0]):
-
-        for c in range(frames[0].shape[1]):
-
-            check_point = -1
-            merging = False
-            for f in range(len(frames)):
-
-                cur = frames[f][r, c, :2]
-
-                if not merging and _np.any(cur != 0):
-                    # Non-zero Value.
-                    frames[f][r, c, 2] = 1
-
-                if f != len(frames) - 1:
-                    nxt = frames[f + 1][r, c, :2]
-
-                    if not merging and _np.all(cur == nxt) and _np.all(cur != 0):
-                        # First equal sets in a row.
-                        merging = True
-                        check_point = f
-
-                        # Merge the equal sets.
-                        frames[f + 1][r, c, :] = 0
-                        frames[f][r, c, 2] += 1
-
-                    elif merging and _np.all(cur == nxt) and _np.all(cur != 0):
-                        # Continuing equal sets in a row.
-                        frames[f + 1][r, c, :] = 0
-                        frames[f][r, c, :] = 0
-                        frames[check_point][r, c, 2] += 1
-
-                    elif merging and _np.any(cur != nxt):
-                        # End of equal set sequence.
-                        merging = False
-
-    return frames
-
-
-def reduced_build(frames: list[_np.array, ...], start_x: float = 1500, start_y: float = 1500, size: float = 1,
-                  fps: float = 2, start_off: bool = False, turn_off_noanim: bool = False):
-    """Convert a reduced image array into a list of circloO objects."""
-    objs = []
-    xpos = 0
-    ypos = 0
-    no_fade = not turn_off_noanim
-
-    for f in range(len(frames)):
-        for i in range(frames[f].shape[0]):
-            for j in range(frames[f].shape[1]):
-                x_factor = frames[f][i, j, 0]
-                y_factor = frames[f][i, j, 1]
-                t_factor = frames[f][i, j, 2]
-
-                if x_factor > 0:
-                    size_x = size * x_factor * 2
-                    size_y = size * y_factor * 2
-                    x_coord = xpos + start_x
-                    y_coord = ypos + start_y
-                    on_time = t_factor / fps
-                    delay = (fps + f) / fps
-
-                    objs.append(_Gen(x_coord, y_coord, size_x, size_y, density=0, damping=0,
-                                     disappear_after=on_time, wait_between=9999, init_delay=delay,
-                                     start_off=start_off, no_fade=no_fade))
-
-                xpos += 2 * size
-
-            xpos = 0
-            ypos += 2 * size
-
-        ypos = 0
-
-    return objs
-
-
-
+                    # Clear the determined region so that it is not processed again.
+                    arr[i: i + depth,
+                        j: j + height,
+                        k: k + width] = 0
