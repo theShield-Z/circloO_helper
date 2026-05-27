@@ -14,6 +14,7 @@ from .tools import *
 from .pixel_builder import Pixels
 from .text import Text
 
+import circloo_helper.dithering
 from .image_converter import CHImage
 from .video_converter import CHVideo
 

@@ -1,4 +1,4 @@
-from copy import copy
+from typing import Callable
 import numpy as np
 import cv2 as cv
 import numba
@@ -7,42 +7,7 @@ from .object import CustomObject
 from .object_types import Generator
 from .object_shapes import Rectangle
 from .tools import translate, dimensions
-
-
-# DITHERING PATTERNS ###################################################################################################
-
-BAYER_MATRIX_8X8 = (1 / 64) * np.array([
-    [ 0, 48, 12, 60,  3, 51, 15, 63],
-    [32, 16, 44, 28, 35, 19, 47, 31],
-    [ 8, 56,  4, 52, 11, 59,  7, 55],
-    [40, 24, 36, 20, 43, 27, 39, 23],
-    [ 2, 50, 14, 62,  1, 49, 13, 61],
-    [34, 18, 46, 30, 33, 17, 45, 29],
-    [10, 58,  6, 54,  9, 57,  5, 53],
-    [42, 26, 38, 22, 41, 25, 37, 21]
-    ])
-
-LINE_DITHER_8X8 = (1 / 64) * np.array([
-    [ 0,  1,  2,  3,  4,  5,  6,  7],
-    [32, 33, 34, 35, 36, 37, 38, 39],
-    [16, 17, 18, 19, 20, 21, 22, 23],
-    [48, 49, 50, 51, 52, 53, 54, 55],
-    [ 8,  9, 10, 11, 12, 13, 14, 15],
-    [40, 41, 42, 43, 44, 45, 46, 47],
-    [24, 25, 26, 27, 28, 29, 30, 31],
-    [56, 57, 58, 59, 60, 61, 62, 63],
-])
-
-DOTTED_LINE_DITHER_8X8 = (1 / 64) * np.array([
-    [ 0, 16,  1, 17,  2, 18,  3, 19],
-    [32, 48, 33, 49, 34, 50, 35, 51],
-    [ 8, 24,  9, 25, 10, 26, 11, 27],
-    [40, 56, 41, 57, 42, 58, 43, 59],
-    [ 4, 20,  5, 21,  6, 22,  7, 23],
-    [36, 52, 37, 53, 38, 54, 39, 55],
-    [12, 28, 13, 29, 14, 30, 15, 31],
-    [44, 60, 45, 61, 46, 62, 47, 63],
-])
+from .dithering import LINE_DITHER_8X8, ordered_dither
 
 
 class CHVideo(CustomObject):
@@ -53,7 +18,8 @@ class CHVideo(CustomObject):
                  fps: int | float,
                  threshold: int | float = .5,
                  channel_weights: tuple[int | float, int | float, int | float] = (1, 1, 1),
-                 show_img: bool = True):
+                 show_img: bool = True,
+                 ditherer: Callable[[np.array], np.array] = lambda x: ordered_dither(x, LINE_DITHER_8X8)):
         super().__init__()
         self._filepath = filepath
 
@@ -66,6 +32,8 @@ class CHVideo(CustomObject):
         self._threshold = threshold
         self._channel_weights = channel_weights
         self._show_img = show_img
+
+        self._ditherer = ditherer
 
         self._is_already_built = False
 
@@ -108,7 +76,7 @@ class CHVideo(CustomObject):
             frame_rgb = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
             frame_resized = cv.resize(frame_rgb, self._resolution)
             data = frame_resized.astype(np.float32) / 255
-            data_dithered = self.ordered_dither(data)
+            data_dithered = self._ditherer(data)
             data_avg = np.average(data_dithered[:, :, :3], axis=2, weights=np.asarray(self._channel_weights))
             pix_arr = np.where(data_avg >= self._threshold, 0, 1)
 
@@ -139,25 +107,6 @@ class CHVideo(CustomObject):
 
         self._is_already_built = True
         return self._obj_cache
-
-    @staticmethod
-    def ordered_dither(image: np.array, pattern: np.array = BAYER_MATRIX_8X8):
-        """Ordered Dithering using pattern matrix."""
-
-        if pattern is None:
-            return image
-
-        height, width, _ = image.shape
-
-        threshold_map = np.tile(
-            pattern,
-            (height // pattern.shape[0] + 1, width // pattern.shape[1] + 1)
-        )[:height, :width]
-        threshold_map = threshold_map[:, :, np.newaxis]
-
-        dithered_image = (image > threshold_map)
-
-        return dithered_image
 
     @staticmethod
     @numba.njit
