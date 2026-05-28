@@ -18,12 +18,8 @@ import circloo_helper.dithering
 from .image_converter import CHImage
 from .video_converter import CHVideo
 
-# try:
-#     from .plotters import plot_points, plot_image
-#     from .video_converter import video_to_circloo, BAYER_MATRIX_8X8, LINE_DITHER_8X8, DOTTED_LINE_DITHER_8X8
-# except ImportError:
-#     warn("Unable to load video converter and/or plotters. Please install opencv-python to use them.")
-#
+from .plotters import PointPlotter
+
 # try:
 #     from.svg_converter import svg_to_circloo
 # except ImportError:
