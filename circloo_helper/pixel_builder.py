@@ -13,23 +13,25 @@ class Pixels(CustomObject):
                  obj: Object,
                  scale_x: float | int | None = None,
                  scale_y: float | int | None = None,
-                 reduce_rectangles: bool = True):
+                 reduce_objects: bool = True):
         """
-        Tiles an input Object according to an input 2D binary array.
+        Tiles an input Object according to an input 2D or 3D binary array.
         :param arr:         2D or 3D binary array. Object is created in each cell with a 1, 0's are ignored.
                                 If 3D, third dimension is time (only usable for Generator type objects)
         :param obj:         Object to be tiled. Pixel array starts at obj coordinates.
         :param scale_x:     Distance between each object (x). If None, value is the width of obj. Default is None.
         :param scale_y:     Distance between each object (y). If None, value is the height of obj. Default is None.
-        :param reduce_rectangles:   If True and obj is a Rectangle, pixel array is built with greedy rectangle
-                                    decomposition to reduce object count. Default is True.
+        :param reduce_objects:   If True, multiple object reduction steps will be taken. I highly discourage setting
+                                    this to False. For Rectangle objects, greedy rectangle decomposition will be
+                                    performed. For 3D arrays, Generators that are on for multiple frames will be merged
+                                    into a single Generator that stays on during all frames.
         """
         super().__init__()
 
         self.arr = np.asarray(arr)
         self.obj: Object = obj
 
-        self.reduce_rectangles = reduce_rectangles
+        self.reduce_rectangles = reduce_objects
 
         if scale_x is not None:
             self.scale_x = scale_x
@@ -54,22 +56,6 @@ class Pixels(CustomObject):
             self.scale_x = scale_x
         if not self._is_manually_scaled_y:
             self.scale_y = scale_y
-
-    # def build_objs(self):
-    #     super().build_objs()
-    #     self._update_scale()
-    #
-    #     if self.reduce_rectangles and isinstance(self.obj, _os.Rectangle):
-    #         return self._reduced_build()
-    #
-    #     for i in range(len(self.arr)):
-    #         for j in range(len(self.arr[i])):
-    #             if self.arr[i][j] == 1:
-    #                 x = j * self.scale_x
-    #                 y = i * self.scale_y
-    #                 self._obj_cache.append(translate(self.obj, x, y))
-    #
-    #     return self._obj_cache
 
     def build_objs(self):
         super().build_objs()
@@ -179,7 +165,6 @@ class Pixels(CustomObject):
         """
         arr = arr.copy()
         b, c = arr.shape
-        # a -> number of frames
         # b -> height of frame
         # c -> width of frame
 
