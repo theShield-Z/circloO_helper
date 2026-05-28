@@ -54,16 +54,32 @@ class CHVideo(CustomObject):
 
         super().build_objs()
 
+        processed_frames, frame_duration = self._process_video()
+
+        # Convert to Objects
+        obj = copy(self._obj)
+        obj.disappear_after = frame_duration
+        obj.init_delay = frame_duration
+        self._obj_cache.extend(Pixels(processed_frames, obj).build_objs())
+
+        self._is_already_built = True
+        return self._obj_cache
+
+    def _process_video(self):
+        """
+        Processes the video at self._filepath.
+        Returns as a tuple the processed frames and the duration of each frame in seconds.
+        """
         cap = cv.VideoCapture(self._filepath)
         if not cap.isOpened():
             raise ValueError(f"Can not read video at {self._filepath}")
 
         total_source_frames = cap.get(cv.CAP_PROP_FRAME_COUNT)
         source_fps = cap.get(cv.CAP_PROP_FPS)
-        source_duration = total_source_frames / source_fps
+        source_duration = total_source_frames / source_fps      # in seconds
 
         total_target_frames = int(source_duration * self._fps)
-        frame_duration = source_duration / total_target_frames
+        frame_duration = source_duration / total_target_frames  # in seconds
 
         processed_frames = []
 
@@ -101,11 +117,4 @@ class CHVideo(CustomObject):
             else:
                 pass
 
-        # Convert to Objects
-        obj = copy(self._obj)
-        obj.disappear_after = frame_duration
-        obj.init_delay = frame_duration
-        self._obj_cache.extend(Pixels(processed_frames, obj).build_objs())
-
-        self._is_already_built = True
-        return self._obj_cache
+        return processed_frames, frame_duration
