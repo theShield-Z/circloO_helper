@@ -1,62 +1,83 @@
-from svgpathtools import (svg2paths2 as _svg2paths2,
-                          parse_path as _parse_path,
-                          path as _path)
+"""
+TODO: more complex svgs, like those made with inkscape, seem to have have incorrect path offsets. more testing needs to be done.
+"""
+
+from svgpathtools import svg2paths2, parse_path, path
 import cmath
 import math
-import circloo_helper as ch
+from warnings import warn
+
+from .object import CustomObject
+from .circloo_objects import Line, Curve, Arc
 
 
-def svg_to_circloo(svg_path, x_pos=1500, y_pos=1500, scale=1, line_thickness=3):
-    """
-    Converts a vector image into circloO objects.
-    Code adapted from https://github.com/qaptivator/circloo-tools/tree/main/tools/svg_to_level
-    :param svg_path:        Path to file.
-    :param x_pos:           X position of top-left corner; default is 1500 (center)
-    :param y_pos:           Y position of top-left corner; default is 1500 (center)
-    :param scale:           Scale of image; default is 1
-    :param line_thickness:  Thickness of each line; default is 3
-    :return:        List of circloO objects.
-    """
-    def offset_pos(pos: tuple, offset_x=x_pos, offset_y=y_pos):
-        return pos[0] + offset_x/scale, pos[1] + offset_y/scale
+class CHSVG(CustomObject):
+    """circloO Helper SVG"""
+    def __init__(self, filepath, x_pos=1500, y_pos=1500, scale=1, line_thickness=3):
+        """
+        Converts a vector (SVG) image into circloO objects.
+        Code adapted from https://github.com/qaptivator/circloo-tools/tree/main/tools/svg_to_level
+        :param filepath:        Path to file
+        :param x_pos:           x-position of top-left corner; default is 1500 (center)
+        :param y_pos:           y-position of top-left corner; default is 1500 (center)
+        :param scale:           Scale of image; default is 1 (no scaling)
+        :param line_thickness:  Thickness of each line; default is 3
+        """
+        super().__init__()
+        self.filepath = filepath
+        self.x = x_pos
+        self.y = y_pos
+        self.scale = scale
+        self.line_thickness = line_thickness
 
-    def scale_pos(pos: tuple):
-        return pos[0] * scale, pos[1] * scale
+    def build_objs(self):
+        super().build_objs()
 
-    def c2p(complex_pos: complex):
-        """Complex number to position"""
-        return scale_pos(offset_pos((complex_pos.real, complex_pos.imag)))
+        def offset_pos(pos: tuple, offset_x=self.x, offset_y=self.y):
+            return pos[0] + offset_x / self.scale, pos[1] + offset_y / self.scale
 
-    paths, _, _ = _svg2paths2(svg_path)
-    objs = []
+        def scale_pos(pos: tuple):
+            return pos[0] * self.scale, pos[1] * self.scale
 
-    for path in paths:
+        def c2p(complex_pos: complex):
+            """
+            Complex number to position.
+            Also scales & offsets the position for convenience.
+            """
+            return scale_pos(offset_pos((complex_pos.real, complex_pos.imag)))
 
-        parsed_path = _parse_path(path.d())
-        for el in parsed_path:
-            # Loop through each element of the path.
+        paths, _, _ = svg2paths2(self.filepath)
 
-            if isinstance(el, _path.Line):
-                objs.append(ch.objects.Line(*c2p(el.start), *c2p(el.end), thickness=line_thickness))
+        for p in paths:
 
-            elif isinstance(el, _path.CubicBezier):
-                objs.append(ch.objects.Curve(*c2p(el.start), *c2p(el.control1), *c2p(el.control2), *c2p(el.end),
-                                             thickness=line_thickness))
+            parsed_path = parse_path(p.d())
+            for el in parsed_path:
 
-            elif isinstance(el, _path.QuadraticBezier):
-                # just like a cubic bezier but with both ctrl points combined
-                objs.append(ch.objects.Curve(*c2p(el.start), *c2p(el.control), *c2p(el.control), *c2p(el.end),
-                                             thickness=line_thickness))
+                if isinstance(el, path.Line):
+                    self._obj_cache.append(Line(*c2p(el.start), *c2p(el.end), thickness=self.line_thickness))
 
-            elif isinstance(el, _path.Arc):
-                p1 = el.start
-                p2 = el.end
-                r = el.radius.real
-                center = el.center
+                elif isinstance(el, path.CubicBezier):
+                    self._obj_cache.append(Curve(*c2p(el.start), *c2p(el.control1), *c2p(el.control2), *c2p(el.end),
+                                                 thickness=self.line_thickness))
 
-                start_angle = math.degrees(cmath.atan(p1-center).real)
-                end_angle = math.degrees(cmath.atan(p2-center).real)
+                elif isinstance(el, path.QuadraticBezier):
+                    # just like a cubic bezier but with both ctrl points combined
+                    self._obj_cache.append(Curve(*c2p(el.start), *c2p(el.control), *c2p(el.control), *c2p(el.end),
+                                                 thickness=self.line_thickness))
 
-                objs.append(ch.objects.Arc(*c2p(center), start_angle, end_angle, r * scale, thickness=line_thickness))
+                elif isinstance(el, path.Arc):
+                    p1 = el.start
+                    p2 = el.end
+                    r = el.radius.real
+                    center = el.center
 
-    return objs
+                    start_angle = math.degrees(cmath.atan(p1 - center).real)
+                    end_angle = math.degrees(cmath.atan(p2 - center).real)
+
+                    self._obj_cache.append(
+                        Arc(*c2p(center), start_angle, end_angle, r * self.scale, thickness=self.line_thickness))
+
+                else:
+                    warn(f"One or more paths could not be parsed from {self.filepath}")
+
+        return self._obj_cache
