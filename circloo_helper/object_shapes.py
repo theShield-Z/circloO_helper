@@ -1,7 +1,7 @@
-from .object import Object as _O
+from .object import Object as _Object
 
 
-class _ObjectShape(_O):
+class _ObjectShape(_Object):
     def __init__(self):
         super().__init__()
 
@@ -75,8 +75,8 @@ class Line(_ObjectShape):
 class Connection(_ObjectShape):
     def __init__(self):
         super().__init__()
-        self.obj1: _O | None = None
-        self.obj2: _O | None = None
+        self.obj1: _Object | None = None
+        self.obj2: _Object | None = None
 
 
 class Collectable(_ObjectShape):

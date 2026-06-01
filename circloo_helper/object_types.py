@@ -1,7 +1,7 @@
-from .object import Object as _O
+from .object import Object as _Object
 
 
-class _ObjectType(_O):
+class _ObjectType(_Object):
     def __init__(self):
         super().__init__()
 

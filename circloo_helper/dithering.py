@@ -12,13 +12,13 @@ Ordered dithering patterns:
 - You can also make your own pattern (they're just 2D numpy arrays :p)
 """
 
-import numba
-import numpy as np
+import numba as _numba
+import numpy as _np
 
 
 # ORDERED PATTERNS #####################################################################################################
 
-BAYER_MATRIX_8X8 = (1 / 64) * np.array([
+BAYER_MATRIX_8X8 = (1 / 64) * _np.array([
     [ 0, 48, 12, 60,  3, 51, 15, 63],
     [32, 16, 44, 28, 35, 19, 47, 31],
     [ 8, 56,  4, 52, 11, 59,  7, 55],
@@ -29,7 +29,7 @@ BAYER_MATRIX_8X8 = (1 / 64) * np.array([
     [42, 26, 38, 22, 41, 25, 37, 21]
     ])
 
-LINE_DITHER_8X8 = (1 / 64) * np.array([
+LINE_DITHER_8X8 = (1 / 64) * _np.array([
     [ 0,  1,  2,  3,  4,  5,  6,  7],
     [32, 33, 34, 35, 36, 37, 38, 39],
     [16, 17, 18, 19, 20, 21, 22, 23],
@@ -40,7 +40,7 @@ LINE_DITHER_8X8 = (1 / 64) * np.array([
     [56, 57, 58, 59, 60, 61, 62, 63],
 ])
 
-DOTTED_LINE_DITHER_8X8 = (1 / 64) * np.array([
+DOTTED_LINE_DITHER_8X8 = (1 / 64) * _np.array([
     [ 0, 16,  1, 17,  2, 18,  3, 19],
     [32, 48, 33, 49, 34, 50, 35, 51],
     [ 8, 24,  9, 25, 10, 26, 11, 27],
@@ -54,8 +54,8 @@ DOTTED_LINE_DITHER_8X8 = (1 / 64) * np.array([
 
 # DITHERERS ############################################################################################################
 
-@numba.njit
-def floyd_steinberg(image: np.array):
+@_numba.njit
+def floyd_steinberg(image: _np.array):
     """Floyd-Steinberg dithering algorithm, adjusted to give more contrast.
     https://research.cs.wisc.edu/graphics/Courses/559-s2004/docs/floyd-steinberg.pdf"""
     image = image.copy()
@@ -77,7 +77,7 @@ def floyd_steinberg(image: np.array):
     return image
 
 
-def ordered_dither(image: np.array, pattern: np.array):
+def ordered_dither(image: _np.array, pattern: _np.array):
     """Ordered Dithering using pattern matrix (a few basic patterns are included in the `dithering` module)."""
     image = image.copy()
 
@@ -86,17 +86,17 @@ def ordered_dither(image: np.array, pattern: np.array):
 
     height, width, _ = image.shape
 
-    threshold_map = np.tile(
+    threshold_map = _np.tile(
         pattern,
         (height // pattern.shape[0] + 1, width // pattern.shape[1] + 1)
     )[:height, :width]
-    threshold_map = threshold_map[:, :, np.newaxis]
+    threshold_map = threshold_map[:, :, _np.newaxis]
 
     dithered_image = (image > threshold_map)
 
     return dithered_image
 
 
-def undither(image: np.array):
+def undither(image: _np.array):
     """Do not perform any dithering. This is useful for purely black/white images."""
     return image.copy()

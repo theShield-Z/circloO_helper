@@ -1,14 +1,14 @@
-import math
+import math as _math
 import tripy
 
-from .object import CustomObject as _CO
+from .object import CustomObject as _CustomObject
 from .tools import pivot as _pivot
 import circloo_helper.circloo_objects as _o
 import circloo_helper.object_types as _ot
 import circloo_helper.object_shapes as _os
 
 
-class OutlineRectangle(_CO, _ot.Solid, _os.Rectangle):
+class OutlineRectangle(_CustomObject, _ot.Solid, _os.Rectangle):
     def __init__(self,
                  x_pos: int | float,
                  y_pos: int | float,
@@ -68,7 +68,7 @@ class OutlineRectangle(_CO, _ot.Solid, _os.Rectangle):
         return self._obj_cache
 
 
-class MoveableArc(_CO, _ot.Moveable, _os.Line):
+class MoveableArc(_CustomObject, _ot.Moveable, _os.Line):
     def __init__(self,
                  x_pos: int | float,
                  y_pos: int | float,
@@ -111,8 +111,8 @@ class MoveableArc(_CO, _ot.Moveable, _os.Line):
 
     @staticmethod
     def _calc_rect_height(r, theta):
-        theta = math.radians(theta)
-        return 2 * r * math.sin(theta / 2)
+        theta = _math.radians(theta)
+        return 2 * r * _math.sin(theta / 2)
 
     def build_objs(self):
         super().build_objs()
@@ -153,7 +153,7 @@ class MoveableArc(_CO, _ot.Moveable, _os.Line):
         return self._obj_cache
 
 
-class Polygon(_CO, _ot.Solid, _os.Other):
+class Polygon(_CustomObject, _ot.Solid, _os.Other):
     def __init__(self, *points):
         """
         Solid simple Polygon. Built using ear-clipping method.
