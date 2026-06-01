@@ -1,5 +1,5 @@
 import math as _math
-import tripy
+import tripy as _tripy
 
 from .object import CustomObject as _CustomObject
 from .tools import pivot as _pivot
@@ -165,7 +165,7 @@ class Polygon(_CustomObject, _ot.Solid, _os.Other):
     def build_objs(self):
         super().build_objs()
 
-        triangles = tripy.earclip(self.points)
+        triangles = _tripy.earclip(self.points)
         for triangle in triangles:
             (x1, y1), (x2, y2), (x3, y3) = triangle
             self._obj_cache.append(_o.SolidTriangle(x1, y1, x2, y2, x3, y3))
