@@ -19,7 +19,7 @@ class Level:
                  camera_follow_one_player_only: bool = False,
                  affect_all_players_by_collectables: bool = False,
                  line_extra_width: int | float = 0,
-                 gravcontrol: int | float = False):
+                 gravcontrol: bool = False):
         """
         circloO Level
         :param segments:    Number of collectables to collect before level is completed; default is 7
