@@ -1235,7 +1235,7 @@ class SizeCollectable(_os.Collectable):
 
     def _to_str(self, enumeration: bool = False) -> str:
         tag = 'iso' if self.collect_from_object else 'is'
-        new_size = self.size * 32.50 if self.by_player_percent else self.size
+        new_size = self.size * 32 if self.by_player_percent else self.size - .5
 
         self._set_attributes(f"ic '{tag}'", self.x, self.y, self.appear_at_segment, '', new_size)
         return super()._to_str(enumeration)
