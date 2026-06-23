@@ -74,6 +74,8 @@ You can alternatively download the source from GitHub, navigate to the directory
 pip install .
 ```
 
+See the examples contained in [`examples/main.py`](https://github.com/theShield-Z/circloO_helper/tree/main/examples) for basic usage of most features.
+
 
 ## Basic Workflow
 
@@ -291,7 +293,7 @@ See [Image Conversion (vector)](#image-conversion-vector) for converting SVG ima
 You can easily add images (any common format) to a Level using the `CHImage` class. The class takes an input filepath, an Object, and a downsample factor, then dithers and thresholds the image into a 2D binary array that can be built with `Pixels`.
 
 ```python
-img = ch.CHImage("examples/shrek.webp",
+img = ch.CHImage("mona_lisa.webp",
                  SolidRectangle(1500, 1500, 10, 10),
                  4)
 ```
@@ -304,7 +306,7 @@ img = ch.CHImage("examples/shrek.webp",
 You can easily add images (any common format) to a Level using the `CHVideo` class. The class takes an input filepath, an Generator type Object, an output resolution, and an output fps, then dithers and thresholds each frame of the video into a 2D binary array that can be built with `Pixels`.
 
 ```python
-vid = ch.CHVideo("examples/Dancing Rick Astley Loop.mp4",
+vid = ch.CHVideo("Dancing Rick Astley Loop.mp4",
                  RectangleGenerator(1500, 1500, 10, 10, density=0, no_fade=True),
                  (40, 30),
                  5)

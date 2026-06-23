@@ -1,0 +1,20 @@
+/
+/ circloO level
+/ Made with circloO Level Editor
+totalCircles 2 1
+/ EDITOR_TOOL 3 solids
+/ EDITOR_VIEW 1767.96 1821.37 1.17
+/ EDT 2117155
+/ _SAVE_TIME_1782240294000_END
+levelscriptVersion 10
+COLORS 20
+grav 1 270
+b 1250 1800 150 150 0
+< 0
+b 1750 1800 150 150 0
+< 1
+y 1180 1609 1 1 1
+bullet
+< 2
+b 1500 1912.50 100 37.50 0
+< 3
