@@ -1,7 +1,9 @@
 from copy import copy
 from typing import Callable
+
 import numpy as np
-import cv2 as cv
+import imageio.v3 as iio
+from PIL import Image
 
 from .object import CustomObject
 from .object_types import Generator
@@ -70,38 +72,54 @@ class CHVideo(CustomObject):
         Processes the video at self._filepath.
         Returns as a tuple the processed frames and the duration of each frame in seconds.
         """
-        cap = cv.VideoCapture(self._filepath)
-        if not cap.isOpened():
+
+        try:
+            metadata = iio.immeta(self._filepath)
+        except Exception as e:
             raise ValueError(f"Can not read video at {self._filepath}")
 
-        total_source_frames = cap.get(cv.CAP_PROP_FRAME_COUNT)
-        source_fps = cap.get(cv.CAP_PROP_FPS)
+        source_fps = float(metadata['fps'])
+
+        # Count source frames.
+        total_source_frames = 0
+        for _ in iio.imiter(self._filepath):
+            total_source_frames += 1
+
         source_duration = total_source_frames / source_fps      # in seconds
 
         total_target_frames = int(source_duration * self._fps)
         frame_duration = source_duration / total_target_frames  # in seconds
 
+        # Set up video display
+        if self._show_img:
+            import matplotlib.pyplot as plt
+
+            preview_im = None
+            plt.ion()
+            fig, ax = plt.subplots()
+            ax.axis('off')
+            fig.canvas.manager.set_window_title('Processing video...')
+
         processed_frames = []
 
-        for target_frame_idx in range(total_target_frames):
-            # Map target frame to source frame.
-            source_frame_idx = int(target_frame_idx * (source_fps / self._fps))
+        frame_step = source_fps / self._fps
+        next_source_frame = 0
 
-            if source_frame_idx >= total_source_frames:
-                # Ensure video length is not overshot.
-                break
+        for source_frame_idx, frame_rgb in enumerate(iio.imiter(self._filepath)):
 
-            # Jump to mapped source frame.
-            cap.set(cv.CAP_PROP_POS_FRAMES, source_frame_idx)
-
-            ret, frame = cap.read()
-
-            if not ret:
-                break
+            # Skip frames to achieve desired fps.
+            if source_frame_idx < int(next_source_frame):
+                continue
+            next_source_frame += frame_step
 
             # Processing.
-            frame_rgb = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
-            frame_resized = cv.resize(frame_rgb, self._resolution)
+            frame_resized = np.asarray(
+                Image.fromarray(frame_rgb).resize(
+                    self._resolution,
+                    Image.Resampling.BILINEAR
+                )
+            )
+
             data = frame_resized.astype(np.float32) / 255
             data_dithered = self._ditherer(data)
             data_avg = np.average(data_dithered[:, :, :3], axis=2, weights=np.asarray(self._channel_weights))
@@ -109,12 +127,28 @@ class CHVideo(CustomObject):
 
             processed_frames.append(pix_arr)
 
+            if len(processed_frames) >= total_target_frames:
+                break
+
             # Display video as it processes.
             if self._show_img:
-                cv.imshow("circloO Video is Processing...", (1 - pix_arr).astype(np.uint8) * 255)
-                cv.waitKey(1)
-                # cv.waitKey(int(frame_duration * 1000))    # Show video in real time
-            else:
-                pass
+                img = (1 - pix_arr).astype(np.uint8) * 255
+
+                if preview_im is None:
+                    preview_im = ax.imshow(
+                        img,
+                        cmap='gray',
+                        vmin=0,
+                        vmax=255
+                    )
+                else:
+                    preview_im.set_data(img)
+
+                fig.canvas.draw_idle()
+                fig.canvas.flush_events()
+                plt.pause(0.001)
+
+        if self._show_img:
+            plt.close(fig)
 
         return processed_frames, frame_duration

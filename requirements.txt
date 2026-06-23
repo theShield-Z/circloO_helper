@@ -2,7 +2,8 @@ setuptools
 numpy
 matplotlib
 pillow
-opencv-python
+imageio
+imageio-ffmpeg
 svgpathtools-light
 pyperclip
 tripy
