@@ -18,8 +18,10 @@
   - [Dithering Module](#dithering)
   - [Point Plotter](#point-plotters)
 - [API](#api)
+  - [Connections](#connections)
 - [To-Do & Know Issues](#to-do--known-issues)
 
+<hr>
 
 # circloO Helper
 
@@ -81,7 +83,7 @@ lvl.to_file("my_circloO_level.txt")
 
 ## Levels
 
-Create a level by calling `ch.Level()`. You can see the full API [here](), but the most important Level attributes are `color`, `segments`, and `grav_scale`, which determine the level's color, the number of segments, and the gravity strength respectively. 
+Create a level by calling `ch.Level()`. You can see the full API [here](#api), but the most important Level attributes are `color`, `segments`, and `grav_scale`, which determine the level's color, the number of segments, and the gravity strength respectively. 
 
 To add an object `obj` to a Level `lvl`, use `lvl.add(obj)`. Once you have finished programming your level, you can export to your clipboard, as a file, or simply print it to the terminal.
 
@@ -107,7 +109,7 @@ Object shapes represent the shape or category of an object. Shapes include:
   - All connections have obj1 and obj2 attributes that reference the objects that they connect.
   - Note that, due to their levelscript representation, Glue is not a connection
 - Collectable
-  - Collectables have many attributes (see the [Collectable API](#api)), but the most important are:
+  - Collectables have many attributes (see the [Collectable API](#object-shapes)), but the most important are:
     - Coordinates
     - `is_trigger` – determines whether it is a trigger 
     - `collect_from_object` – determines whether it is collected by Players or Moveable objects
@@ -131,7 +133,7 @@ Object types represent the physics type of an object. Types include:
   - All generator objects also inherit from Moveable
   - Represented by a green color in the level editor
 - Growing
-  - Objects that grow when a Collectable is collected that causes the level to expand
+  - Objects that grow when a Collectable expands the level
   - Represented by a light blue color in the level editor
 - Rotatable
   - Objects that rotate according to a speed and torque
@@ -321,93 +323,491 @@ plot = PointPlotter(Rope, *pts)
 
 Set the `close` attribute to True to connect the final point to the initial point (thus making a closed shape).
 
+<hr>
 
 # API
 
+### Level
+
+- Location: `ch.Level()`
+- Attributes:
+  - `segments (int)` - Number of collectables to collect before level is completed; default is 7
+    - While this *can* be a float, it is most common to use an int
+  - `grav_scale (float)` - Strength of initial gravity; default is 1
+  - `grav_dir (float)` - Direction of initial gravity; default is 270 (down)
+    - 0 is right, increasing rotates counter-clockwise
+  - `start_full (bool)` - If True, the level starts with all segments already revealed; default is False
+  - `color (int)` - Level color, 0-255; default is random
+  - `music (tuple[int, int])` - Music track played when level starts; default is `(0, 0)` (no preference)
+    - `(1, track)` for preferred (start this track after current ends) 
+    - `(2, track)` to force
+    - Track 4 is silence
+  - `recommend_sfx (bool)` - If True, ask players to enable sfx when they start the level; default is False
+  - `default_line_thickness (float)` - Default thickness of new Line/Curve/Arc objects when placed in the in-game editor; default is 3
+  - `camera_follow_one_player_only (bool)` - If True and there are multiple Players in the level, the camera will only follow the first Player added to the level; default is False
+  - `affect_all_players_by_collectables (bool)` - If True, the effects of any collectable collected will apply to all Players, rather than just the one that collected it; default is False
+  - `line_extra_width (float)` - Change the size of the sprite for Line/Curve/Arc objects (but not their collisions); default is 0
+    - Can be negative, causing the collision to be larger than the sprite
+  - `gravcontrol (bool)` - If True, pressing left/right will also rotate the gravity direction; default is False
+    - Initial direction will always be down (270), regardless of `grav_dir`
+- Methods:
+  - `add(obj: Object)` - Adds an Object `obj` to the level
+  - `object_at(index: int)` - Returns a reference to the `index`'th object added to the level
+  - `get_objs()` - Returns a list of all Objects in the level
+  - `to_clipboard()` - Copies the level as a string to your clipboard
+    - You can then import it to the game using the Import > From Clipboard
+    - Also returns the level as a string, allowing `print(Level.to_clipboard())`
+  - `to_file(path: str)` - Saves the level to `path` filepath
+    - You can then import it to the game using the Import > From File
+
+### Level Parsers
+
+- `ch.parse(level_text: str)` - Parses and returns circloO level from string `level_text`
+  - Will only parse levels with a levelscript version of 10 or higher (the default at the current version of the game)
+- `ch.read_file(path: str)` - Parses and returns circloO levels from a filepath `path`
+  - Opens file at `path`, then calls `parse()`
+- `ch.read_clipboard()` - Parses and returns circloO levels from your clipboard
+  - To be used with the in-game functionality Save > Export to Clipboard
+  - Reads clipboard contents, then calls `parse()`
+
+### Object
+
+- Location: `ch.Object`
+- All circloO Objects are children of `Object`
+- Methods:
+  - `get_id()` - Returns the index of the object within a Level
+    - If the object has not yet been added to a Level, the returned id is -1
+
+### Object Shapes
+
+- Location: `ch.object_shapes`
+- Inherit from `Object` class
+- Other
+  - No attributes
+  - Exists solely for compatibility with objects that have no clear shape
+- `Player`
+  - Attributes:
+    - `x (float)` - X-position of Player's center
+    - `y (float)` - Y-position of Player's center
+    - `size (float)` - Radius multiplier of Player; default is 1
+      - The actual diameter in editor units follows the formula `size * 64 + 1`
+    - `speed (float)` - Player's speed; default is 1
+    - `density (float)` - Density of Player; default is 1
+    - `restitution (float)` - How much the Player bounces/rebounds after hitting a surface; default is 0
+      - This is hidden in-game
+      - 0 means no bounce; 1 is perfectly elastic
+    - `bullet` - If True, turns on the Improve High-Speed Physics setting; default is True
+- `Circle`
+  - Attributes:
+    - `x (float)` - X-position of circle's center
+    - `y (float)` - Y-position of circle's center
+    - `radius (float)` - Radius of circle
+    - `attractor (float)` - Planet gravity: Positive pulls moveable objects to it, and negative pushes them away; default is 0
+    - `wheelsprite (bool)` - If True, changes the circle's sprite to a wheel, rather than the default solid color; default is False
+- `Rectangle`
+  - Attributes:
+    - `x (float)` - X-position of rectangle's top-left corner
+    - `y (float)` - Y-position of rectangle's top-left corner
+      - If `coords_by_center` is True, `x` and `y` will instead be the coordinates of the rectangle's center
+    - `width (float)` - Width of rectangle
+    - `height (float)` - Height of rectangle
+    - `rotation (float)` - Rotation of the rectangle in degrees; default is 0
+      - Increase to rotate clockwise
+    - `coords_by_center (bool)` - If True, interprets given `x` and `y` coordinates as the rectangle's center
+- `Triangle`
+  - Attributes:
+    - `x1 (float)` - X-position of 1st point
+    - `y1 (float)` - Y-position of 1st point
+    - `x2 (float)` - X-position of 2nd point
+    - `y2 (float)` - Y-position of 2nd point
+    - `x3 (float)` - X-position of 3rd point
+    - `y3 (float)` - Y-position of 3rd point
+- `Line`
+  - Attributes:
+    - `thickness (float)` - Thickness of the line; default is 3
+      - This is calculated before `Level.line_extra_width` is added
+- `Connection`
+  - Attributes:
+    - `obj1 (Object, CustomObject)` - Reference to first connected Object
+      - For a `FixedDistanceConnection`, this is the Portal
+      - For a `Hinge`, this is the object that will be rotated around (if no offsets are given)
+      - For a `Slider`, this is the object the arrow points away from
+      - For a `SpecialConnection`, this is the `SpecialCollectable` that triggers it
+    - `obj2 (Object, CustomObject)` - Reference to second connected Object
+      - For a `SpecialConnection`, this is the target that the action is applied to
+- `Collectable`
+  - Attributes:
+    - `x (float)` - X-position of collectable's center
+    - `y (float)` - Y-position of collectable's center
+    - `appear_at_segment (int)` - Segment at which the collectable first appears
+    - `part_of_segment (int)` - Number of previously collected collectables within the same segment after which the collectable appears
+    - `zoom (float)` - Changes camera zoom upon collection
+      - -1 is no change
+      - -2 is makes the camera view the full level
+      - The larger the number, the more the camera zooms in
+    - `is_trigger (bool)` - If True, the collectable will not increase the current segment or part of segment upon collection; default is False
+    - `collect_from_object (bool)` - If True, the collectable will only be collected upon collision with Moveable objects, rather than collision with a Player; default is False
+    - `start_disabled (bool)` - If True, the collectable starts deactivated and must be reactivated by a `SpecialConnection` to collect; default is False
+    - `disable_on_trigger (bool)` - If True, the collectable starts deactivated and must 
+    - `sound (Collectable.Sound)` - The sound that plays when the collectable is collected; default is None
+  - Methods:
+    - `set_sound(group, note, volume, pitch, play_if_no_function, sound)` - Updates the collectable's sound attribute.
+      - All parameters except `sound` are equivalent to the attributes of `Collectable.Sound`
+      - `sound (Collectable.Sound, None)` - If not None, this will override all other parameters and set this as the collectable's sound
+    - `mute()` - Makes the collectable play no sound upon collection, or unmutes it if alread muted
+  - `Collectable.Sound` inner class
+    - Attributes:
+      - `group (str)` - Sound type
+        - `''` (empty string) is default
+        - `'drum'` for percussion, `'piano'` for piano, `'house'` for miscellaneous, `'none'` for no sound
+      - `note (int)` - Sound variant; default is 0
+        - For piano, the note; for drum, the drum or cymbal; for house, the instrument; etc.
+      - `volume (float)` - Volume of sound; default is 1
+      - `pitch (float)` - Pitch of sound; default is 1
+      - `play_if_no_function (bool)` - If True, the collectable will play this sound even if it does nothing else
+
+### Object Types
+
+- Location: `ch.object_types`
+- Inherit from `Object` class
+- `Solid`
+  - No attributes
+- `Moveable`
+  - Attributes:
+    - `density (float)` - Density of object; default is 1
+      - Set to 0 to make the object immovable (functionally equivalent to a Solid)
+    - `damping (float)` - How quickly the object is slowed when no force is applied; default is 0
+    - `fix_rotation (bool)` - Disable rotation if True; default is False
+      - Has no effect on Circle type objects (duh)
+    - `bullet (bool)`
+      - If True, turns on the Improve High-Speed Physics setting; default is False
+      - In-game, this setting is available if you hold Shift while clicking on the Properties menu
+- `Generator`
+  - Times are measured in seconds
+  - Attributes:
+    - `disappear_after (float)` - The time for which the object exists before disappearing; default is 5
+    - `wait_between (float)` - The time between the object disappearing and a new object generating; default is 1
+    - `init_delay (float)` - The initial time that the generator waits before turning on; default is 0
+      - `wait_between` is also added to this time
+    - `no_fade (bool)` - If True, disables the fading animation when an object appears or disappears; default is False
+    - `start_off (bool)` - If True, the generator does not start until triggered via a `SpecialConnection`; default is False
+- `Growing`
+  - Attributes:
+    - `keep_pos (bool)` - If True, the object's x- and y-positions stay the same after growing. If False, they move relative to the new level size; default is False
+- `Rotatable`
+  - Attributes:
+    - `motor_speed (float)` - Speed of rotation; default is 0
+    - `torque (float)` - Torque of rotation; default is 100
+
+
+### Objects
+
+All Objects are indirect children of `Object`.
+
+Most Objects also inherit an ObjectType and an ObjectShape, which both give them several attributes not shown here. See their respective Types and Shapes to find these inherited attributes.
+
+- Solid Objects
+  - `SolidCircle` - Solid circle
+    - Type: `Solid`
+    - Shape: `Circle`
+    - No additional attributes
+  - `SolidRectangle`
+    - Type: `Solid`
+    - Shape: `Rectangle`
+    - No additional attributes
+  - `SolidTriangle`
+    - Type: `Solid`
+    - Shape: `Triangle`
+    - No additional attributes
+  - `Line`
+    - Type: `Solid`
+    - Shape: `Line`
+    - Additional attributes:
+      - `x1` - X-position of start point
+      - `y1` - Y-position of start point
+      - `x2` - X-position of end point
+      - `y2` - Y-position of end point
+  - `Arc`
+    - Type: `Solid`
+    - Shape: `Line`
+    - Outline of a circular arc
+    - Additional attributes:
+      - `center_x (float)` - X-position of arc's center
+      - `center_y (float)` - Y-position of arc's center
+      - `start_angle (float)` - Starting angle in degrees
+      - `end_angle (float)` - Ending angle in degrees
+        - An angle of 0 is right, and increasing the angle moves the point clockwise
+      - `radius (float)` - Radius of arc, calculated from the center of the line thickness
+      - `ctr_x (float)` - Position of control point (3-point arc only); set to -1 to keep as center arc; default is -1
+      - `ctr_y (float)` - Position of control point (3-point arc only); set to -1 to keep as center arc; default is -1
+  - `Curve`
+    - Type: `Solid`
+    - Shape: `Line`
+    - Cubic Bézier Curve
+    - Additional attributes:
+      - `start_x` - X-position of start point
+      - `start_y` - Y-position of start point
+      - `ctr1_x` - X-position of 1st control point
+      - `ctr1_y` - Y-position of 1st control point
+      - `ctr2_x` - X-position of 2nd control point
+      - `ctr2_y` - Y-position of 2nd control point
+      - `end_x` - X-position of end point
+      - `end_y` - Y-position of end point
+      - `resolution` - Béziers are made up of smaller lines. Resolution is how many smaller lines there are; default is 100
+- Growing Objects
+  - `GrowingCircle`
+    - Type: `Growing`
+    - Shape: `Circle`
+    - No additional attributes
+  - `GrowingRectangle`
+    - Type: `Growing`
+    - Shape: `Rectangle`
+    - No additional attributes
+- Moveable Objects
+  - `MoveableCircle`
+    - Type: `Moveable`
+    - Shape: `Circle`
+    - No additional attributes
+  - `MoveableRectangle`
+    - Type: `Moveable`
+    - Shape: `Rectangle`
+    - No additional attributes
+  - `MoveableTriangle`
+    - Type: `Moveable`
+    - Shape: `Triangle`
+    - No additional attributes
+- Special/Other Objects
+  - `Player`
+    - No Type
+    - Shape: `Player`
+    - The Player circle that you control by pressing left & right
+    - No additional attributes
+  - `RotatableRectangle`
+    - Type: `Moveable`
+      - Note that this does not inherit from `Rotatable`, despite its name
+    - Shape: `Rectangle`
+    - No additional attributes
+  - `RotatableCircle`
+    - Type: `Rotatable`
+    - Shape: `Circle`
+    - No additional attributes
+  - `SpringyRectangle`
+    - Type: `Moveable`
+    - Shape: `Rectangle`
+    - Rectangle that returns to a resting position of 0 degrees when rotated
+    - Additional attributes:
+      - `frequency (float)` - Frequency of spring; default is 2
+        - Essentially how fast the spring bounces up/down to return to rest
+      - `fulcrum_offset (float)` - X-position of the object's fulcrum (point of rotation) relative to the rectangle's center
+      - `fulcrum_radius (float)` - Radius of the fulcrum; default is 10
+        - Does not affect rotation
+  - `Portal`
+    - No Type
+    - Shape: `Other`
+    - Teleports a Player to a target location on contact.
+    - Additional attributes:
+      - `portal_x (float)` - X-coordinate of portal's center
+      - `portal_y (float)` - Y-coordinate of portal's center
+      - `target_x (float)` - X-coordinate of target location
+      - `target_y (float)` - Y-coordinate of target location
+      - `appear_at_circle (int)` - Segment at which the portal is activated; default is 1
+        - Hidden in-game, and appears to not work
+      - `deactivate_at_circle (int)` - Segment after which to deactivate portal; default is 7
+      - `min_touch_time (float)` - Minimum time the Player needs to be touching the portal before it teleports; default is 0
+      - `start_disabled (bool)` - If True, the portal starts disabled and must be reactivated by a `SpecialConnection` to use
+  - `Dummy`
+    - No Type
+    - Shape: `Other`
+    - This object literally does nothing
+    - Additional attributes
+      - `x (float)` - X-position of the object's center
+      - `y (float)` - Y-position of the object's center
+  - `ParticleRectangle`
+    - No Type
+    - Shape: `Rectangle`
+    - Splits into many tiny movable circles with high restitution (bouncy).
+      - These circles also persist across restarting the level
+    - No additional attributes
+- Generators
+  - `CircleGenerator`
+    - Types: `Generator`, `Moveable`
+    - Shape: `Circle`
+    - Generates movable circles at timed intervals
+    - No additional attributes
+  - `RectangleGenerator`
+    - Types: `Generator`, `Moveable`
+    - Shape: `Rectangle`
+    - Generates movable rectangles at timed intervals
+    - No additional attributes
+  - `TriangleGenerator`
+    - Types: `Generator`, `Moveable`
+    - Shape: `Triangle`
+    - Generates movable circles at timed intervals
+    - No additional attributes
+<a id="connections"></a>
+- Connections
+  - `Glue`
+    - No Type
+    - Shape: `Other`
+      - Note that Glue does not inherit from `Connection`, unlike all other connections
+    - Rigidly connects two `Moveable` objects together.
+    - Additional Attributes:
+      - `obj1 (Object)` - Reference to first connected Object
+      - `obj2 (Object)` - Reference to second connected Object
+  - `Rope`
+    - No Type
+    - Shape: `Connection`
+    - Connects two objects with the ability to move independently up to a maximum length
+    - When connecting to `Portal` objects, instead use `FixedDistanceConnection`
+    - Additional Attributes:
+      - `offset1_x (float)` - X-offset from first connected Object; default is 0
+      - `offset1_y (float)` - Y-offset from first connected Object; default is 0
+      - `offset2_x (float)` - X-offset from second connected Object; default is 0
+      - `offset2_y (float)` - Y-offset from second connected Object; default is 0
+      - `max_length (float)` - Maximum length the rope can extend beyond the distance between `obj1` and `obj2`; default is 0
+  - `FixedDistanceConnection`
+    - No Type
+    - Shape: `Connection`
+    - In-game, used only to connect Portals to Moveable objects via the Rope tool.
+      - `obj1` must be the `Portal` object.
+    - Known/Useful Interactions:
+      - In general, `obj1` will move normally, but `obj2`'s sprite and collision will desync: The sprite will stay connected to `obj1`, but the collision will move fully independently.
+        - `obj2`'s sprite will also keep the same general orientation of the collision (e.g., if you rotate a `MoveableRectangle`'s collision, the sprite will also rotate).
+        - `obj2`'s collision will otherwise act completely normally.
+      - When `obj2` is a `CircleGenerator` or `RectangleGenerator`, the point at which the object is spawned will move with `obj1`.
+        - For some reason, this is not true of Triangle generators.
+    - Additional attributes:
+      - `also_move_destination (bool)` - If True, when `obj1` is a Portal, the target destination will move relative to `obj2`. If False, the Portal will always teleport to the same position. Default is False
+  - `DistanceConnection`
+    - No Type
+    - Shape: `Connection`
+    - Rigidly connects any two objects together, allowing rotation on either end.
+    - Hidden in-game.
+    - Additional attributes:
+      - `offset1_x (float)` - X-offset from first connected Object; default is 0
+      - `offset1_y (float)` - Y-offset from first connected Object; default is 0
+      - `offset2_x (float)` - X-offset from second connected Object; default is 0
+      - `offset2_y (float)` - Y-offset from second connected Object; default is 0
+  - `Pulley`
+    - No Type
+    - Shape: `Connection`
+    - Connects two objects via a two-pulley system
+    - Additional attributes:
+      - `pulley1_x (float)` - X-position of first pulley, relative to obj1; default is 0
+      - `pulley1_y (float)` - Y-position of first pulley, relative to obj1; default is -100
+      - `pulley2_x (float)` - X-position of second pulley, relative to obj2; default is 0
+      - `pulley2_y (float)` - Y-position of second pulley, relative to obj2; default is -100
+      - `offset1_x (float)` - X-offset of connection from obj1; default is 0
+      - `offset1_y (float)` - Y-offset of connection from obj1; default is 0
+      - `offset2_x (float)` - X-offset of connection from obj2; default is 0
+      - `offset2_y (float)` - Y-offset of connection from obj2; default is 0
+        - Note that offsets are unavailable in the editor, and they can be buggy if not left as their default 0
+      - `ratio (float)` - How 'strongly' the right side pulls compared to the left; default is 1
+      - `unlock_movement (bool)` - Allow for horizontal movement of the pulleys while editing; default is False
+  - `Hinge`
+    - Type: `Rotatable`
+    - Shape: `Connection`
+    - Semi-rigidly connects two Objects while allowing rotation at an adjustable pivot point.
+    - Can also rotate at a fixed speed and torque
+    - Additional attributes:
+      - `offset_x (float)` - X-offset of pivot point from `obj1`; default is 0
+      - `offset_y (float)` - Y-offset of pivot point from `obj1`; default is 0
+      - `draw_connection_line (bool)` - If True, the Hinge is visible while playing the level; default is False
+      - `enable_collisions (bool)` - If True, `obj1` and `obj2` will be able to collide with each other; default is False (both will pass through each other)
+  - `Slider`
+    - No Type
+    - Shape: `Connection`
+    - Semi-rigidly connects two Objects, allowing movement in a straight line between each other.
+    - Additional attributes:
+      - `offset_x (float)` - X-offset from `obj1`; default is 0
+      - `offset_y (float)` - Y-offset from `obj1`; default is 0
+  - `SpecialConnection`
+    - No Type
+    - Shape: `Connection`
+    - Performs an action on `obj2` upon the collection of `obj1`, where `obj1` must be a `SpecialCollectable` or `InputTrigger`
+    - Supported actions:
+      - `Disconnect` - Destroys/disconnects a Rope or Hinge
+      - `Follow` - Sets the camera to follow most Objects
+      - `Reset` - For Generators, enables and resets the `init_delay` countdown
+      - `Now` - For Generators, Generates a single Object
+      - `NowIf` - For Generators, Generates an Object only if no Objects generated from that Generator currently exist
+      - `Destroy` - For Generators, destroys all instances of generated Objects
+      - `On` - Enables Portals or turns on Generators
+      - `Off` - Disables Portals or turns off Generators
+      - `Teleport` - For Portals, immediately teleports all Players to the target position
+      - `RotationOn` - For `Moveable` Objects, allows the Object to rotate
+      - `RotationOff` - For `Moveable` Objects, disables rotation of the Object
+      - `SetSpeed` - Sets the x and y speed of a Solid or Moveable Object
+        - Requires two additional attributes: new x speed and new y speed
+        - If the Object is a Solid, it will keep moving until another `SetSpeed` action is applied
+        - Set either x or y to 9999 to not change the speed in that direction
+      - `Impulse` - Applies a force to an Object in the x- and y-directions
+        - Requires two additional attributes: x-impulse and y-impulse
+      - `Trigger` - For Collectables, collects and triggers the collectable
+      - `TriggerRandom` - For Collectables, collects and triggers connected collectables randomly
+        - If multiple Collectables are connected to the same `obj1` trigger, one of them is chosen at random
+        - If a single Collectable is connected to a trigger, that Collectable will be triggered with a 50% chance
+    - Additional attributes:
+      - `collectable (Collectable)` - Reference to the Collectable that triggers the SpecialConnection
+      - `target (Object)` - Reference to target Object which `action` is performed upon
+      - `action (str)` - Action performed upon `target` (see above for supported actions)
+      - `args` - Additional arguments required when `action` is `SetSpeed` or `Impulse`
+- Collectables
+  - `Collectable`
+    - No Type
+    - Shape: `Collectable`
+    - The default Collectable Object that performs no special functions upon collection
+    - No additional attributes
+  - `GravityCollectable`
+    - No Type
+    - Shape: `Collectable`
+    - Changes level gravity upon collection
+    - Additional attributes:
+      - `grav_dir (float)` - Direction of new gravity in degrees; default is 270 (down)
+        - An angle of 0 is right, and increasing the angle rotates counter-clockwise
+      - `grav_strength (float)` - Strength of new gravity; default is 1
+  - `SizeCollectable`
+    - No Type
+    - Shape: `Collectable`
+    - Changes Player size upon collection
+    - Additional attributes:
+      - `size (float)` - New radius/size of player; default is 1
+      - `by_player_percent (bool)` - If False, new size is measured in editor units
+        - The new radius is generally determined by a percentage of the default Player radius, rather than the actual diameter
+        - Note that (for some reason), in-game, the Size Collectable's `size` is not the same as the Player's `size`.
+  - `DisconnectCollectable`
+    - No Type
+    - Shape: `Collectable`
+    - Disconnects all Players from all Connections upon collection
+    - No additional attributes
+  - `SpeedCollectable`
+    - No Type
+    - Shape: `Collectable`
+    - Changes Player speed upon collection; only affects Player that collected it
+    - Additional attributes:
+      - `speed (float)` - New speed of Player; default is 1
+  - `SpecialCollectable`
+    - No Type
+    - Shape: `Collectable`
+    - Performs an action on an Object connected to it via a `SpecialConnection`
+    - No additional attributes
+  - `InputTrigger`
+    - No Type
+    - Shape: `Collectable`
+    - Performs an action on an Object connected to it via a `SpecialConnection` once a certain input has been pressed
+    - Additional attributes
+      - `input (str)` - The type of input that activates the trigger
+        - `left`, `right`, or `both` activates the trigger when you action the left button, right button, or both buttons
+        - `every_frame` sets the trigger to activate on every frame
+        - `on_trigger` sets the trigger to only activate when triggered by a `SpecialConnection` with a `Trigger` or `TriggerRandom` action
+      - `action (str)` - How the input must be actioned to activate the trigger
+        - Only matters for `left`, `right`, and `both` inputs.
+        - `pressed` and `released` activate the trigger when the button(s) is pressed or released, respectively.
+        - `down` activates the trigger every frame while the button is held down.
+  
+
+<hr>
+
+# To-Do & Known Issues
+
 TODO: Implement this section.
-
-## To-Do & Known Issues
-
-TODO: Implement this section.
-
-[//]: # ()
-[//]: # ()
-[//]: # (## Mechanisms &#40;deprecated in favor of Custom Objects&#41;)
-
-[//]: # ()
-[//]: # (circloO Helper also supports mechanisms: groups of objects that perform a specific function. These may not all work correctly depending on your setup—it's on my to-do list.)
-
-[//]: # (Create a mechanism, then add it to your level:)
-
-[//]: # (```)
-
-[//]: # (mechanism = ch.mechanisms.LeftRightDetector&#40;1500, 1500, lvl.get_len&#40;&#41;&#41;     # create a right/left detector at the center of the level)
-
-[//]: # (mechanism.add_to&#40;lvl&#41;       # add mechanism to level)
-
-[//]: # (```)
-
-[//]: # ()
-[//]: # (## Image Conversion)
-
-[//]: # ()
-[//]: # (You can put images into your level very easily. Convert an image, then add it to the level:)
-
-[//]: # (```)
-
-[//]: # (img = ch.image_to_circloo&#40;"examples/mona_lisa.webp", 4, 1500, 1500&#41;)
-
-[//]: # (lvl.add&#40;img&#41;)
-
-[//]: # (```)
-
-[//]: # (There are a lot of customizable parameters for this, including a downsample factor, channel weighting, and more! Details of each are in the documentation in `image_converter.py`.)
-
-[//]: # (It uses a very efficient algorithm to limit the amount of objects used. As long as you use a sensible downsample factor, you'll have no issue adding images to your levels.)
-
-[//]: # ()
-[//]: # (## Video Conversion)
-
-[//]: # ()
-[//]: # (You can put videos into your level with relative ease. Convert the video, then add it to the level:)
-
-[//]: # (```)
-
-[//]: # (video = ch.video_to_circloo&#40;"examples/Dancing Rick Astley Loop.mp4", &#40;96, 54&#41;, 10, 3, 1500, 1500&#41;)
-
-[//]: # (lvl.add&#40;video&#41;)
-
-[//]: # (```)
-
-[//]: # (There are a lot of customizable parameters for this, including frame size, frame skipping, fps, dithering patterns, and more! Details of each are in the documentation in `video_converter.py`.)
-
-[//]: # (Like the image converter, it also uses a very efficient algorithm to limit the amount of objects used. You may have to play around with frame skipping and fps to display a given video, but as long is it isn't too long, you should be fine. In general, you want to choose `frame_skip` and `fps` so that `fps = 30 / frame_skip` to match the original video's play speed &#40;e.g., if `frame_skip` is 10, then `fps` should be 3&#41;.)
-
-[//]: # ()
-[//]: # (## Text Conversion)
-
-[//]: # ()
-[//]: # (You can easily add text to your circloO level, too. Convert a string of text, then add it to the level:)
-
-[//]: # (```)
-
-[//]: # (phrase = ch.write&#40;"Hello World!", 1500, 1500&#41;)
-
-[//]: # (lvl.add&#40;phrase&#41;)
-
-[//]: # (```)
-
-[//]: # (You can also change the size of the text using `size` and the spacing of the letters using `spacing`.)
-
-[//]: # ()
-[//]: # ()
-[//]: # (# To Do / Known Bugs)
-
-[//]: # ()
-[//]: # (- add a defaults module that contains example levels and former mechanisms)
-
-[//]: # (- improve examples in `main.py` to reflect the most recent version.)
-
-[//]: # (- update the README with new features for this version)
-
-[//]: # (- preexisting levels with connections don't always parse properly... for *some* reason??)
