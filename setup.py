@@ -20,6 +20,7 @@ setup(
         'pyperclip',
         'tripy',
         'numba',
+        'mido',
     ],
     long_description=description,
     long_description_content_type="text/markdown",

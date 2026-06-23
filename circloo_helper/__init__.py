@@ -17,3 +17,4 @@ import circloo_helper.dithering
 from .image_converter import CHImage
 from .video_converter import CHVideo
 from .svg_converter import CHSVG
+from .audio_converter import CHMIDI

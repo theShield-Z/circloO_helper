@@ -8,3 +8,4 @@ svgpathtools-light
 pyperclip
 tripy
 numba
+mido
