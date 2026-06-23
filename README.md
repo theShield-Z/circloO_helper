@@ -16,9 +16,34 @@
   - [Image Conversion (vector)](#image-conversion-vector)
   - [Video Conversion](#video-conversion)
   - [Dithering Module](#dithering)
-  - [Point Plotter](#point-plotters)
+  - [Point Plotter](#point-plotter)
 - [API](#api)
-  - [Connections](#connections)
+  - [Level](#level)
+  - [Level Parsers](#level-parsers)
+  - [Object](#object)
+  - [Object Shapes](#object-shapes)
+  - [Object Types](#object-types)
+  - [All Objects](#objects-1)
+    - [Solid Objects](#solid-objects)
+    - [Lines](#lines)
+    - [Growing Objects](#growing-objects)
+    - [Moveable Objects](#moveable-objects)
+    - [Special/Other Objects](#special-objects)
+    - [Generators](#generators)
+    - [Connections](#connections)
+    - [Collectables](#collectables)
+    - [Connections](#connections)
+  - [Custom Object](#custom-object)
+  - [Included Custom Objects](#included-custom-objects)
+  - [Tools](#tools)
+  - Converters
+    - [Pixel Builder](#pixel-builder-1)
+    - [Text](#text)
+    - [Point Plotter](#plotter)
+    - [CHImage](#chimage)
+    - [CHVideo](#chvideo)
+    - [CHSVG](#chsvg)
+    - [Dithering Module](#dithering-1)
 - [To-Do & Know Issues](#to-do--known-issues)
 
 <hr>
@@ -327,7 +352,7 @@ Set the `close` attribute to True to connect the final point to the initial poin
 
 # API
 
-### Level
+## Level
 
 - Location: `ch.Level()`
 - Attributes:
@@ -351,6 +376,7 @@ Set the `close` attribute to True to connect the final point to the initial poin
   - `gravcontrol (bool)` - If True, pressing left/right will also rotate the gravity direction; default is False
     - Initial direction will always be down (270), regardless of `grav_dir`
 - Methods:
+  - Overrides: `repr()` & `str()`, `len()`
   - `add(obj: Object)` - Adds an Object `obj` to the level
   - `object_at(index: int)` - Returns a reference to the `index`'th object added to the level
   - `get_objs()` - Returns a list of all Objects in the level
@@ -370,11 +396,12 @@ Set the `close` attribute to True to connect the final point to the initial poin
   - To be used with the in-game functionality Save > Export to Clipboard
   - Reads clipboard contents, then calls `parse()`
 
-### Object
+## Object
 
 - Location: `ch.Object`
 - All circloO Objects are children of `Object`
 - Methods:
+  - Overrides: `repr()` & `str()`
   - `get_id()` - Returns the index of the object within a Level
     - If the object has not yet been added to a Level, the returned id is -1
 
@@ -500,12 +527,15 @@ Set the `close` attribute to True to connect the final point to the initial poin
     - `torque (float)` - Torque of rotation; default is 100
 
 
-### Objects
+## Objects
+
+- Location: `ch.circloo_objects`
 
 All Objects are indirect children of `Object`.
 
 Most Objects also inherit an ObjectType and an ObjectShape, which both give them several attributes not shown here. See their respective Types and Shapes to find these inherited attributes.
 
+<a id="solid-objects"></a>
 - Solid Objects
   - `SolidCircle` - Solid circle
     - Type: `Solid`
@@ -519,6 +549,8 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
     - Type: `Solid`
     - Shape: `Triangle`
     - No additional attributes
+<a id="lines"></a>
+- Lines
   - `Line`
     - Type: `Solid`
     - Shape: `Line`
@@ -554,6 +586,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
       - `end_x` - X-position of end point
       - `end_y` - Y-position of end point
       - `resolution` - Béziers are made up of smaller lines. Resolution is how many smaller lines there are; default is 100
+<a id="growing-objects"></a>
 - Growing Objects
   - `GrowingCircle`
     - Type: `Growing`
@@ -563,6 +596,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
     - Type: `Growing`
     - Shape: `Rectangle`
     - No additional attributes
+<a id="moveable-objects"></a>
 - Moveable Objects
   - `MoveableCircle`
     - Type: `Moveable`
@@ -576,6 +610,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
     - Type: `Moveable`
     - Shape: `Triangle`
     - No additional attributes
+<a id="special-objects"></a>
 - Special/Other Objects
   - `Player`
     - No Type
@@ -628,6 +663,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
     - Splits into many tiny movable circles with high restitution (bouncy).
       - These circles also persist across restarting the level
     - No additional attributes
+<a id="generators"></a>
 - Generators
   - `CircleGenerator`
     - Types: `Generator`, `Moveable`
@@ -751,7 +787,8 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
       - `collectable (Collectable)` - Reference to the Collectable that triggers the SpecialConnection
       - `target (Object)` - Reference to target Object which `action` is performed upon
       - `action (str)` - Action performed upon `target` (see above for supported actions)
-      - `args` - Additional arguments required when `action` is `SetSpeed` or `Impulse`
+      - `*args (tuple)` - Additional arguments required when `action` is `SetSpeed` or `Impulse`
+<a id="collectables"></a>
 - Collectables
   - `Collectable`
     - No Type
@@ -806,8 +843,220 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
         - `down` activates the trigger every frame while the button is held down.
   
 
+## Custom Object
+
+- Location: `ch.CustomObject`
+- Methods:
+  - Overrides: `repr()` & `str()`, `len()`
+  - `get_id()` - Returns the index of the object within a Level
+    - If the object has not yet been added to a Level, the returned id is -1
+  - `build_objs()` - Clears the object cache, adds all necessary objects to the cache, then returns the cache
+    - To be overridden in all child classes with the following structure:
+      ```python
+      def build_objs(self):
+        super().build_objs()  # Clears self._obj_cache
+        # Create objects and add them to self.obj_cache
+        return self._obj_cache
+      ```
+
+
+### Included Custom Objects
+
+- Location: `ch.custom_objects`
+- All custom objects included in the library inherit from `CustomObject`
+- All converters and several other objects are also Custom Objects, but they have their own dedicated sections.
+- `OutlineRectangle`
+  - Type: `Solid`
+  - Shape: `Rectangle`
+  - A solid outline of a Rectangle, where the outline is along the inner edge.
+  - No additional attributes
+- `MoveableArc`
+  - Type: `Moveable`
+  - Shape: `Line`
+  - A movable arc of a circle, where the outline is centered on the radius
+  - Additional attributes:
+    - `radius (float)` - Radius of the arc
+    - `start_angle (float)` - Starting angle of the outline in degrees; default is 0 (right)
+    - `end_angle (float)` - Ending angle of the outline in degrees; default is 360 (creates a full circle with `start_angle`'s default value)
+    - `resolution (int)` - Number of rectangles that make up the final arc; default is None
+      - If None, resolution is calculated automatically for a good combination of resolution and low object count.
+- `Polygon`
+  - Type: `Solid`
+  - Shape: `Other`
+  - A simple polygon built using ear-clipping from the tripy library
+  - Additional attributes:
+    - `*points (tuple[float])` - Any number of (x, y) points
+
+
+## Tools
+
+- Most transformation tools do not work with Custom Objects
+- `ch.polar(r, theta, start_x, start_y, in_degrees)`
+  - Converts a point in polar coordinates to rectangular coordinates.
+  - Returns the rectangular coordinates.
+  - `r` is the distance from (`start_x`, `start_y`).
+    - (`start_x`, `start_y`) is the center of the level (1500, 1500) by default
+  - `theta` is the rotation angle, where 0 is to the right.
+  - If `in_degrees` is True, `theta` will be interpreted in degrees. If False, it will be interpreted in radians.
+- `ch.pivot(obj, theta, pivot_x, pivot_y, in_degrees)`
+  - Rotates an Object `obj` around a pivot point.
+  - Returns a copy of `obj` and leaves the original unaltered
+  - `theta` is the rotation angle, where 0 is to the right.
+  - If `in_degrees` is True, `theta` will be interpreted in degrees. If False, it will be interpreted in radians.
+  - `pivot_x` and `pivot_y` are the coordinates of the pivot point.
+- `ch.translate(obj, by_x, by_y)`
+  - Translates (moves) an Object `obj` by an x and y value.
+  - Returns a copy of `obj` and leaves the original unaltered
+  - `by_x` and `by_y` are both 0 by default, and are the values by which `obj` is shifted.
+- `ch.scale(obj, by_x, by_y)`
+  - Scales an Object `obj` by an x and y value.
+  - Returns a copy of `obj` and leaves the original unaltered
+  - `by_x` and `by_y` are the values by which `obj` is scaled.
+  - If `by_y` is None, the same value as `by_x` will be used, scaling both axes by the same amount.
+- `ch.dimensions(obj)`
+  - Returns the dimensions of an Object `obj`'s bounding box as (width, height)
+- `ch.centroid(obj)`
+  - Returns the centroid (geometric center) of an Object `obj` as (x, y)
+- `ch.push_to_android(file_path, destination)`
+  - Uses ADB to send a file at `file_path` to an Android device's `destination` path.
+- `ch.combine(level_1, level_2)`
+  - Combines the contents of two Levels `level_1` and `level_2`
+  - The header/attributes of `level_1` are kept.
+  - Duplicate Objects that occur in each level are discarded
+
+
+## Converters
+
+### Pixel Builder
+
+- Location: `ch.Pixels`
+- Child of `CustomObject`
+- Tiles an input Object according to an input 2D or 3D binary numpy array.
+- Attributes:
+  - `arr (np.array)` - 2D or 3D binary array
+    - A copy of `obj` is created in each cell that contains a 1.
+    - If the array is 3D, the third dimension is time. As such, `obj` must be of type `Generator` when using a 3D array.
+      - The time between each frame of the 3D array will be `obj.disappear_after`
+      - The Generator will be set to Generate Only Once (`wait_between = 9999`)
+  - `obj (Object)` - The Object to be tiled.
+    - The top-left Object of the array will have the same coordinates as `obj`
+  - `scale_x (float, None)` - Horizontal distance between each object; default is None
+    - If None, the horizontal distance will be the width of `obj`
+  - `scale_y (float, None)` - Vertical distance between each object; default is None
+    - If None, the vertical distance will be the height of `obj`
+  - `reduce_objects (bool)` - If True, multiple object-count–reduction steps will be taken; default is True
+    - For `Rectangle` shape objects, greedy rectangle decomposition will be performed.
+    - For 3D arrays, consecutive frames with a 1 in the same cell will be merged into a single Generator that stays on for the duration of all frames.
+    - Setting this to False is highly discouraged for large arrays.
+
+
+### Text
+
+- Location: `ch.Text`
+- Child of `CustomObject`
+- Converts a string of text into circloO Objects. 
+- Allows use of \n (new line), \r (carriage return), and \t (tabulation).
+- Unsupported characters will be replaced with a large blank box.
+- A `Text` object is a composition of `Pixels` objects.
+- Attributes:
+  - `text (str)` - String of text to be converted
+  - `obj (Object)` - Object to be tiled to create each letter
+  - `spacing (float)` - Space between each letter as a scaler to the width of `obj`; default is 1
+
+
+### Plotter
+
+- Location: `ch.PointPlotter`
+- Child of `CustomObject`
+- Connects several points in a straight line.
+- Attributes:
+  - `obj_type (Type)` - Type of circloO Object that displays a straight line
+    - Supported Types: `Line`, `Rope`, `Slider`, `DistanceConnection`
+  - `points (tuple[float])` - Any number of (x, y) points
+  - `close (bool)` - If True, connects the ending point to the starting point with another line, making a closed polygon; default is True
+  - `line_thickness (float)` - If `obj_type` is `Line`, the thickness of each Line; default is 3
+
+
+### CHImage
+
+- Location: `ch.CHImage`
+- Child of `CustomObject`
+- Converts an image into circloO objects via dithering and grayscale conversion.
+- Uses `Pixels` to create final array of Objects.
+- Note that you primitive support for this is included in-game with Ctrl+Shift+F4
+  - Does not dither and converts everything into `MoveableRectangle` objects
+- Attributes:
+  - `filepath (str)` - Path to input image
+    - Image is opened using the PIL library, so most common extensions are supported.
+  - `obj (Object)` - Object to be tiled into image. 
+    - The coordinates of this Object will be used as the top-left corner of the image.
+  - `downsample_factor (int)` - Factor to donwscale/downsample image
+    - 1 will keep the image the same resolution
+    - For images with higher resolutions, it is recommended to increase this value.
+  - `threshold (float)` - Threshold for binarization; default is 0.5
+    - Should be between 0 and 1.
+  - `channel_weights (tuple[float])` - Weights for each channel to apply a weighted average for grayscale conversion; default is (1, 1, 1) (equal weights for each channel)
+  - `ditherer (function)` - Dithering function (found in `dithering` module); default ditherer is Floyd-Steinberg
+  - `show_img (bool)` - If True, displays the processed binary image before converting to circloO Objects; default is True
+
+
+### CHVideo
+
+- Location: `ch.CHVideo`
+- Child of `CustomObject`
+- Converts a video into circloO objects via dithering and grayscale conversion.
+- Uses `Pixels` to create the final array of Objects.
+- Attributes:
+  - `filepath (str)` - Path to input video
+    - Video is opened using the OpenCV library, so most common extensions are supported.
+  - `obj (Object)` - Object to be tiled into video
+    - Must be of Type `Generator`
+    - The coordinates of this Object will be used as the top-left corner of the video.
+  - `resolution (tuple[int])` - Output resolution of the video in pixels as (width, height)
+  - `fps (float)` - Output displayed frames per second of video
+  - `threshold (float)` - Threshold for binarization; default is 0.5
+    - Should be between 0 and 1.
+  - `channel_weights (tuple[float])` - Weights for each channel to apply a weighted average for grayscale conversion; default is (1, 1, 1) (equal weights for each channel)
+  - `ditherer (function)` - Dithering function (found in `dithering` module); default ditherer is Ordered dithering with a line pattern
+  - `show_img (bool)` - If True, displays the processed frames of the video as it is being processed; default is True
+
+
+### CHSVG
+
+- Location: `ch.CHSVG`
+- Child of `CustomObject`
+- Converts a vector/svg image into circloO objects.
+- Attributes:
+  - `filepath (str)` - Path to input image
+  - `x_pos (float)` - X-coordinate of top-left corner; default is 1500 (center)
+  - `y_pos (float)` - Y-coordinate of top-left corner; default is 1500 (center)
+  - `scale (float)` - Scale of image; default is 1 (no scaling)
+  - `line_thickness (float)` - Thickness of each line; default is 3
+
+
+### Dithering
+
+A module that provides several dithering functions for grayscale arrays.
+
+- Location: `ch.dithering`
+
+Includes both Floyd-Steinberg error diffusion dithering and Ordered dithering.
+
+If you want to implement your own dithering function, the input parameter and return value of each should be an image with three channels as a numpy array.
+
+Note that, if using ordered dithering for the `ditherer` parameter of CHVideo or CHImage, you must pass in the dithering pattern via a lambda function: (e.g., `ditherer=lambda x: ordered_dither(x, BAYER_MATRIX_8X8)`)
+
+Ordered dithering patterns:
+- `BAYER_MATRIX_8X8` - Basic 8x8 Bayer matrix; recommended for images or small videos.
+- `LINE_DITHER_8X8` - Dithers in straight horizontal lines; recommended for large videos, since it maximizes the amount width-first rectangle decomposition algorithms help.
+- `DOTTED_LINE_DITHER` - Similar to `LINE_DITHER_8X8`, but alternates the lines and positions for a little more detail; recommended for medium videos.
+- You can also make your own pattern (they're just 2D numpy arrays with values between 0 & 1 :p)
+
+
 <hr>
 
 # To-Do & Known Issues
 
 TODO: Implement this section.
+
+For now, search through the code for comments prefixed by `TODO: `
