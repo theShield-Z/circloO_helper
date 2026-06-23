@@ -69,7 +69,7 @@ Install with pip:
 pip install circloo-helper
 ```
 
-You can alternatively download the source from GitHub, navigate to the directory that contains `setup.py`, and run:
+You can alternatively download the source from [GitHub](https://github.com/theShield-Z/circloO_helper), navigate to the directory that contains `setup.py`, and run:
 ```commandline
 pip install .
 ```
@@ -1015,7 +1015,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
 - Uses `Pixels` to create the final array of Objects.
 - Attributes:
   - `filepath (str)` - Path to input video
-    - Video is opened using the OpenCV library, so most common extensions are supported.
+    - Video is opened using the imageio library, so most common extensions are supported.
   - `obj (Object)` - Object to be tiled into video
     - Must be of Type `Generator`
     - The coordinates of this Object will be used as the top-left corner of the video.
