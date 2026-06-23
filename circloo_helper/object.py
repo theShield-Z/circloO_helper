@@ -46,8 +46,8 @@ class CustomObject:
         self._id: int = -1
         self._obj_cache: list[Object | 'CustomObject'] = list()
 
-    def __str__(self):
-        return self._to_str(enumeration=True)
+    def __repr__(self):
+        return self._to_str()
 
     def __len__(self):
         return len(self.build_objs())
