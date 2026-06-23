@@ -64,8 +64,9 @@ circloO Helper is a Python library to programmatically generate and alter circlo
 
 ## Setup
 
+Install with pip:
 ```commandline
-pip install git+https://github.com/theShield-Z/circloO_helper.git
+pip install circloo-helper
 ```
 
 You can alternatively download the source from GitHub, navigate to the directory that contains `setup.py`, and run:
