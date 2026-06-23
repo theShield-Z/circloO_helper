@@ -19,10 +19,10 @@
   - [Point Plotter](#point-plotter)
 - [API](#api)
   - [Level](#level)
-  - [Level Parsers](#level-parsers)
+    - [Level Parsers](#level-parsers)
   - [Object](#object)
-  - [Object Shapes](#object-shapes)
-  - [Object Types](#object-types)
+    - [Object Shapes](#object-shapes)
+    - [Object Types](#object-types)
   - [All Objects](#objects-1)
     - [Solid Objects](#solid-objects)
     - [Lines](#lines)
@@ -34,7 +34,7 @@
     - [Collectables](#collectables)
     - [Connections](#connections)
   - [Custom Object](#custom-object)
-  - [Included Custom Objects](#included-custom-objects)
+    - [Included Custom Objects](#included-custom-objects)
   - [Tools](#tools)
   - Converters
     - [Pixel Builder](#pixel-builder-1)
@@ -79,7 +79,6 @@ pip install .
 
 ```python
 # Import the library.
-# TODO: maybe include ropes/connections in this example
 import circloo_helper as ch
 from circloo_helper.circloo_objects import *
 
@@ -109,7 +108,7 @@ lvl.to_file("my_circloO_level.txt")
 
 ## Levels
 
-Create a level by calling `ch.Level()`. You can see the full API [here](#api), but the most important Level attributes are `color`, `segments`, and `grav_scale`, which determine the level's color, the number of segments, and the gravity strength respectively. 
+Create a level by calling `ch.Level()`. You can see the full API [here](#level), but the most important Level attributes are `color`, `segments`, and `grav_scale`, which determine the level's color, the number of segments, and the gravity strength respectively. 
 
 To add an object `obj` to a Level `lvl`, use `lvl.add(obj)`. Once you have finished programming your level, you can export to your clipboard, as a file, or simply print it to the terminal.
 
@@ -119,6 +118,8 @@ Existing levels created in-game can also be parsed and edited with this library.
 ## Objects
 
 Every object is a child class that inherits from ObjectShape and often also ObjectType, which themselves inherit from the base Object class in `object.py`.
+
+See [Objects](#objects-1) for a list of all supported Objects and their attributes.
 
 ### Shapes
 
@@ -135,7 +136,7 @@ Object shapes represent the shape or category of an object. Shapes include:
   - All connections have obj1 and obj2 attributes that reference the objects that they connect.
   - Note that, due to their levelscript representation, Glue is not a connection
 - Collectable
-  - Collectables have many attributes (see the [Collectable API](#object-shapes)), but the most important are:
+  - Collectables have many attributes (see the [Collectable API](#collectables)), but the most important are:
     - Coordinates
     - `is_trigger` – determines whether it is a trigger 
     - `collect_from_object` – determines whether it is collected by Players or Moveable objects
@@ -168,7 +169,10 @@ Object types represent the physics type of an object. Types include:
 
 ## Custom Objects
 
-Custom Objects are objects that are not natively in circloO, but can be created by composing multiple basic objects together. All Custom Objects inherit from the `CustomObject` base class. circloO Helper contains a few Custom Objects:
+Custom Objects are objects that are not natively in circloO, but can be created by composing multiple basic objects together. 
+All Custom Objects inherit from the `CustomObject` base class, and they can be added to Levels just like regular Objects using `Level.add()`. 
+
+circloO Helper contains a few Custom Objects:
 - `OutlineRectangle`
   - An outline of a Solid Rectangle, comprising 4 SolidRectangles for each side.
 - `MoveableArc`
@@ -176,7 +180,7 @@ Custom Objects are objects that are not natively in circloO, but can be created 
 - `Polygon`
   - A Solid polygon, comprising SolidTriangles.
 
-If you need more control over the base objects that a Custom Object is composed of, you can store them in a new list variable by calling the `build_objs()` method, alter them as needed, and add the contents of that list to the level. For example, if you want to all four sides of an OutlineRectangle to a MoveableCircle:
+If you need more control over the base objects that a Custom Object is composed of, you can store them in a new list variable by calling the `build_objs()` method, alter them as needed, and add the contents of that list to the level. For example, if you want to connect all four sides of an OutlineRectangle to a MoveableCircle with a Rope:
 
 ```python
 lvl = ch.Level()
@@ -201,11 +205,11 @@ Custom Objects need to override two functions: `__init__()` and `build_objs()`:
     - ```python
       def __init__(self, x, y, width, height, thickness):
         super().__init__()
-          self.x = x
-          self.y = y
-          self.width = width
-          self.height = height
-          self.thickness = thickness
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.thickness = thickness
       ```
 - `build_objs()`
   - Should first call `super().build_objs()` and should return `self._obj_cache`. 
