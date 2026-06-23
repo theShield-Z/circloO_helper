@@ -8,7 +8,7 @@ import circloo_helper.object_types as _ot
 import circloo_helper.object_shapes as _os
 
 
-class OutlineRectangle(_CustomObject, _ot.Solid, _os.Rectangle):
+class OutlineRectangle(_CustomObject, _ot.Solid, _os.Rectangle, _os.Line):
     def __init__(self,
                  x_pos: int | float,
                  y_pos: int | float,
@@ -87,7 +87,7 @@ class MoveableArc(_CustomObject, _ot.Moveable, _os.Line):
         :param y_pos:           Position of center
         :param radius:          Radius of Arc
         :param start_angle:     Starting angle in degrees; default is 0 (full circle)
-        :param end_angle:       Ending angle in degrees; default is ~360 (full circle)
+        :param end_angle:       Ending angle in degrees; default is 360 (full circle)
         :param thickness:       Thickness of outline; default is 3
         :param resolution:      Number of rectangles the final arc is made up of; if None, calculates automatically; default is None
         :param density:         Density of arc; make 0 to turn solid; default is 1
@@ -134,7 +134,7 @@ class MoveableArc(_CustomObject, _ot.Moveable, _os.Line):
         # Initialize Rectangle.
         rect_height = self._calc_rect_height(self.radius + self.thickness, step)
         rect = _o.MoveableRectangle(self.x + self.radius, self.y, 2 * self.thickness, rect_height,
-                                 self.density, self.damping, fix_rotation=self.fix_rotation, bullet=self.bullet,
+                                 self.density, self.damping, bullet=self.bullet,
                                  coords_by_center=True)
 
         angles = [i * step + s for i in range(self.resolution)]
@@ -142,6 +142,9 @@ class MoveableArc(_CustomObject, _ot.Moveable, _os.Line):
         # Create rectangles.
         for angle in angles:
             rects.append(_pivot(rect, angle, self.x, self.y))
+
+        if self.fix_rotation:   # Avoids putting the modifier on every rect, reducing file size
+            rects[0].fix_rotation = True
 
         glues = []
         for i in range(len(rects) - 1):
