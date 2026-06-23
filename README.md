@@ -69,7 +69,7 @@ Install with pip:
 pip install circloo-helper
 ```
 
-You can alternatively download the source from GitHub, navigate to the directory that contains `setup.py`, and run:
+You can alternatively download the source from [GitHub](https://github.com/theShield-Z/circloO_helper), navigate to the directory that contains `setup.py`, and run:
 ```commandline
 pip install .
 ```
