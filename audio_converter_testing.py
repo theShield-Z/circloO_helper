@@ -1,4 +1,6 @@
 from mido import MidiFile, tick2second
+import circloo_helper as ch
+from circloo_helper.circloo_objects import *
 
 
 NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F',
@@ -10,13 +12,19 @@ def note_number_to_name(note):
     return f"{NOTE_NAMES[note % 12]}{octave}"
 
 
-def print_midi(filename):
+def midi_to_circloo(filename, start_x=1500, start_y=1500):
     midi = MidiFile(filename)
+    lvl = ch.Level(start_full=True, grav_scale=0)
 
     ticks_per_beat = midi.ticks_per_beat
     tempo = 500000  # default: 120 BPM
 
+    x = start_x
+    y = start_y
+
     for track_num, track in enumerate(midi.tracks):
+
+        cbls = {}   # 'note_name' = cbl
 
         print(f"\n=== Track {track_num}: {track.name} ===")
 
@@ -64,10 +72,34 @@ def print_midi(filename):
                         f"duration={duration:8.3f}s"
                     )
 
-            ############################################################################################################
+                    ####################################################################################################
+
+                    # Add a collectable to the level if not already.
+                    keys = cbls.keys()
+                    if note_name not in keys:
+                        sound = Collectable.Sound('piano', note_value - 36, pitch=2)
+                        cbl = Collectable(x + len(keys) * 50, y, is_trigger=True, collect_from_object=True)
+                        cbl.sound = sound
+                        cbls[note_name] = cbl
+
+                    cbl = cbls[note_name]
+                    gen_x = cbl.x
+                    gen_y = cbl.y
+                    # gen = CircleGenerator(gen_x, gen_y, 10, 0, duration, 9999, start_time, no_fade=True)
+                    gen = CircleGenerator(gen_x, gen_y, 10, 0, .05, 9999, start_time, no_fade=True)
+                    lvl.add(gen)
+
+        for cbl in cbls.values():
+            lvl.add(cbl)
+        lvl.add(ch.Text(track.name, SolidRectangle(x + len(cbls) * 50, y - 10, 5, 5)))
+        y += 50
+
+    print(lvl.to_clipboard())
+    lvl.to_file('stereo_madness.txt')
+
 
 
 
 
 if __name__ == "__main__":
-    print_midi("Stereo_Madness (1).mid")
+    midi_to_circloo("8-Bitten 3.mid")
