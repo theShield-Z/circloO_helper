@@ -90,14 +90,24 @@ class CHVideo(CustomObject):
         total_target_frames = int(source_duration * self._fps)
         frame_duration = source_duration / total_target_frames  # in seconds
 
+        # Set up video display
+        if self._show_img:
+            import matplotlib.pyplot as plt
+
+            preview_im = None
+            plt.ion()
+            fig, ax = plt.subplots()
+            ax.axis('off')
+            fig.canvas.manager.set_window_title('Processing video...')
+
         processed_frames = []
 
-        # Skip frames to achieve desired fps.
         frame_step = source_fps / self._fps
         next_source_frame = 0
 
         for source_frame_idx, frame_rgb in enumerate(iio.imiter(self._filepath)):
 
+            # Skip frames to achieve desired fps.
             if source_frame_idx < int(next_source_frame):
                 continue
             next_source_frame += frame_step
@@ -122,7 +132,23 @@ class CHVideo(CustomObject):
 
             # Display video as it processes.
             if self._show_img:
-                ### TODO: re-implement image viewing with matplotlib
-                pass
+                img = (1 - pix_arr).astype(np.uint8) * 255
+
+                if preview_im is None:
+                    preview_im = ax.imshow(
+                        img,
+                        cmap='gray',
+                        vmin=0,
+                        vmax=255
+                    )
+                else:
+                    preview_im.set_data(img)
+
+                fig.canvas.draw_idle()
+                fig.canvas.flush_events()
+                plt.pause(0.001)
+
+        if self._show_img:
+            plt.close(fig)
 
         return processed_frames, frame_duration
