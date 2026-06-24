@@ -12,6 +12,24 @@ from .text import Text
 _NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F',
                'F#', 'G', 'G#', 'A', 'A#', 'B']
 
+_DRUM_MAP = {35: 1,
+             36: 5,
+             38: 0,
+             40: 2,
+             42: ('house', 10, 2, 1),
+             44: ('house', 18, 2, 2),
+             46: 9,
+             49: 3,
+             51: ('house', 18, 1, 1),
+             45: (7, .8),
+             47: (7, .9),
+             48: (7, 1.1),
+             50: (7, 1.3),
+             39: 4,
+             54: 4,
+             56: ('house', 21, 1, 1),
+             57: 3}
+
 
 class CHMIDI(CustomObject):
     """circloO Helper MIDI"""
@@ -64,6 +82,7 @@ class CHMIDI(CustomObject):
         long_y = self.long_start_y
 
         for track_num, track in enumerate(midi.tracks):
+            # print(f"Track {track_num}: {track.name}")    # debug
 
             cbls = {}  # note_name -> cbl
 
@@ -108,11 +127,29 @@ class CHMIDI(CustomObject):
 
                         # CONVERT TO CIRCLOO ###########################################################################
 
-                        # In-game note notation is offset 36 from midi representation
-                        sound = Collectable.Sound('piano', note_value - 36, pitch=self.pitch)
-                        while sound.note < 0:
-                            sound.pitch *= 2
-                            sound.note += 12
+                        sound = None
+
+                        if hasattr(msg, "channel") and msg.channel == 9:
+                            # Likely a percussion channel; set sound as a percussion sound.
+                            drum_sound = _DRUM_MAP.get(note_value, None)
+
+                            if drum_sound is not None:
+                                if isinstance(drum_sound, tuple):
+                                    if len(drum_sound) == 2:
+                                        value, pitch = drum_sound
+                                        sound = Collectable.Sound('drum', value, pitch=pitch)
+                                    elif len(drum_sound) == 4:
+                                        group, value, pitch, volume = drum_sound
+                                        sound = Collectable.Sound(group, value, volume, pitch)
+                                elif isinstance(drum_sound, int):
+                                    sound = Collectable.Sound('drum', drum_sound)
+
+                        if sound is None:
+                            # In-game note notation is offset 36 from midi representation
+                            sound = Collectable.Sound('piano', note_value - 36, pitch=self.pitch)
+                            while sound.note < 0:
+                                sound.pitch /= 2
+                                sound.note += 12
 
                         if duration > self.min_duration:
                             cbl = InputTrigger(1450, 1450, 'every_frame', start_disabled=True)
