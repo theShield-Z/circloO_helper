@@ -12,23 +12,23 @@ from .text import Text
 _NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F',
                'F#', 'G', 'G#', 'A', 'A#', 'B']
 
-_DRUM_MAP = {35: 1,
-             36: 5,
-             38: 0,
-             40: 2,
+_DRUM_MAP = {35: ('drum', 1, 1, 1),
+             36: ('drum', 5, 1, 1),
+             38: ('drum', 0, 1, 1),
+             40: ('drum', 2, 1, 1),
              42: ('house', 10, 2, 1),
              44: ('house', 18, 2, 2),
-             46: 9,
-             49: 3,
+             46: ('drum', 9, 1, 1),
+             49: ('drum', 3, 1, 1),
              51: ('house', 18, 1, 1),
-             45: (7, .8),
-             47: (7, .9),
-             48: (7, 1.1),
-             50: (7, 1.3),
-             39: 4,
-             54: 4,
+             45: ('drum', 7, .8, 1),
+             47: ('drum', 7, .9, 1),
+             48: ('drum', 7, 1.1, 1),
+             50: ('drum', 7, 1.3, 1),
+             39: ('drum', 4, 1, 1),
+             54: ('drum', 4, 1, 1),
              56: ('house', 21, 1, 1),
-             57: 3}
+             57: ('drum', 3, 1, 1)}
 
 
 class CHMIDI(CustomObject):
@@ -134,15 +134,8 @@ class CHMIDI(CustomObject):
                             drum_sound = _DRUM_MAP.get(note_value, None)
 
                             if drum_sound is not None:
-                                if isinstance(drum_sound, tuple):
-                                    if len(drum_sound) == 2:
-                                        value, pitch = drum_sound
-                                        sound = Collectable.Sound('drum', value, pitch=pitch)
-                                    elif len(drum_sound) == 4:
-                                        group, value, pitch, volume = drum_sound
-                                        sound = Collectable.Sound(group, value, volume, pitch)
-                                elif isinstance(drum_sound, int):
-                                    sound = Collectable.Sound('drum', drum_sound)
+                                group, value, pitch, volume = drum_sound
+                                sound = Collectable.Sound(group, value, volume, pitch)
 
                         if sound is None:
                             # In-game note notation is offset 36 from midi representation
@@ -152,6 +145,7 @@ class CHMIDI(CustomObject):
                                 sound.note += 12
 
                         if duration > self.min_duration:
+                            # Use sustained triggers instead.
                             cbl = InputTrigger(1450, 1450, 'every_frame', start_disabled=True)
                             cbl.sound = sound
 
