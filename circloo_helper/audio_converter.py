@@ -68,8 +68,8 @@ class CHMIDI(CustomObject):
         self.start_x = start_x
         self.start_y = start_y
         self.min_duration = min_duration
-        self.long_start_x = long_start_x if long_start_x else start_x - 100
-        self.long_start_y = long_start_y if long_start_y else start_y
+        self.long_start_x = long_start_x if long_start_x is not None else start_x - 100
+        self.long_start_y = long_start_y if long_start_y is not None else start_y
         self.pitch = pitch
         self.volume = volume
         self.labels = labels
@@ -171,7 +171,7 @@ class CHMIDI(CustomObject):
                         if duration > self.min_duration:
                             # Replay the sound every frame when the note is sustained for a while.
 
-                            cbl = InputTrigger(1450, 1450, 'every_frame', start_disabled=True)
+                            cbl = InputTrigger(long_x - 50, long_y, 'every_frame', start_disabled=True)
                             cbl.sound = sound
 
                             on_t = SpecialCollectable(long_x, long_y, is_trigger=True,
