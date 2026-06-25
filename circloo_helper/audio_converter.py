@@ -28,7 +28,8 @@ _DRUM_MAP = {35: ('drum', 1, 1, 1),
              39: ('drum', 4, 1, 1),
              54: ('drum', 4, 1, 1),
              56: ('house', 21, 1, 1),
-             57: ('drum', 3, 1, 1)}
+             57: ('drum', 3, 1, 1),
+             52: ('house', 18, 1, 1)}
 
 
 class CHMIDI(CustomObject):
@@ -42,7 +43,9 @@ class CHMIDI(CustomObject):
                  long_start_x: int | float | None = None,
                  long_start_y: int | float | None = None,
                  pitch: int | float = 1,
-                 labels: bool = True):
+                 volume: int | float = 1,
+                 labels: bool = True,
+                 track_params: dict = None):
         """
         Converts a .mid MIDI song into circloO Objects
         :param filepath:        Path to midi file
@@ -55,8 +58,10 @@ class CHMIDI(CustomObject):
                                     default is None
         :param long_start_y:    Y-position of the top-left corner of long/lasting trigger section.
                                     If None, it will use start_y; default is None
-        :param pitch:           Pitch of all trigger sounds; default is 1
+        :param pitch:           Default pitch of all trigger sounds if none is provided in params; default is 1
+        :param volume:          Default volume of all trigger sounds if none is provided in params; default is 1
         :param labels:          If True, tracks are labeled in-game with their names; default is True
+        :param track_params:    Dictionary of track sound overrides. See documentation for syntax.
         """
         super().__init__()
         self.filepath = filepath
@@ -66,7 +71,9 @@ class CHMIDI(CustomObject):
         self.long_start_x = long_start_x if long_start_x else start_x - 100
         self.long_start_y = long_start_y if long_start_y else start_y
         self.pitch = pitch
+        self.volume = volume
         self.labels = labels
+        self.track_params = {} if track_params is None else track_params
 
     def build_objs(self):
         super().build_objs()
@@ -85,6 +92,11 @@ class CHMIDI(CustomObject):
             # print(f"Track {track_num}: {track.name}")    # debug
 
             cbls = {}  # note_name -> cbl
+
+            track_presets = self.track_params.get(track_num, {})
+            pitch = track_presets.get('pitch', self.pitch)
+            volume = track_presets.get('volume', self.volume)
+            note_overrides = track_presets.get('note_overrides')
 
             active_notes = {}  # note -> start_time_seconds
 
@@ -129,20 +141,27 @@ class CHMIDI(CustomObject):
 
                         sound = None
 
-                        if hasattr(msg, "channel") and msg.channel == 9:
-                            # Likely a percussion channel; set sound as a percussion sound.
-                            drum_sound = _DRUM_MAP.get(note_value, None)
-
-                            if drum_sound is not None:
-                                group, value, pitch, volume = drum_sound
-                                sound = Collectable.Sound(group, value, volume, pitch)
+                        if note_overrides is not None and note_overrides.get(note_value) is not None:
+                            group, value, pitch, volume = note_overrides[note_value]
+                            sound = Collectable.Sound(group, value, volume, pitch)
 
                         if sound is None:
-                            # In-game note notation is offset 36 from midi representation
-                            sound = Collectable.Sound('piano', note_value - 36, pitch=self.pitch)
-                            while sound.note < 0:
-                                sound.pitch /= 2
-                                sound.note += 12
+                            if hasattr(msg, "channel") and msg.channel == 9:
+                                # Standard percussion channel; use sounds from _DRUM_MAP.
+                                drum_sound = _DRUM_MAP.get(note_value)
+
+                                if drum_sound is not None:
+                                    group, value, pitch, volume = drum_sound
+                                    sound = Collectable.Sound(group, value, volume, pitch)
+                                else:
+                                    sound = Collectable.Sound()
+
+                            else:
+                                # In-game note notation is offset 36 from midi representation
+                                sound = Collectable.Sound('piano', note_value - 36, volume, pitch)
+                                while sound.note < 0:
+                                    sound.pitch /= 2
+                                    sound.note += 12
 
                         if duration > self.min_duration:
                             # Use sustained triggers instead.
@@ -179,9 +198,7 @@ class CHMIDI(CustomObject):
                             cbls[note_name] = cbl
 
                         cbl = cbls[note_name]
-                        gen_x = cbl.x
-                        gen_y = cbl.y
-                        gen = CircleGenerator(gen_x, gen_y, 10, 0, .05, 9999, start_time, no_fade=True)
+                        gen = CircleGenerator(cbl.x, cbl.y, 10, 0, .05, 9999, start_time, no_fade=True)
                         self._obj_cache.append(gen)
 
             self._obj_cache.extend(cbls.values())
