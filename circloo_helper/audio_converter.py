@@ -170,7 +170,7 @@ class CHMIDI(CustomObject):
 
                         if duration > self.min_duration:
                             # Replay the sound every frame when the note is sustained for a while.
-
+                            sound.volume /= 4
                             cbl = InputTrigger(long_x - 50, long_y, 'every_frame', start_disabled=True)
                             cbl.sound = sound
 

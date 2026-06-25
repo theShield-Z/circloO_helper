@@ -119,3 +119,21 @@ lvl.add(Player(1500, 1850))
 lvl.add(Collectable(1500, 1850, zoom=-2, is_trigger=True, disable_on_trigger=True))
 
 lvl.to_file("video_conversion.txt")
+
+
+# AUDIO CONVERSION #####################################################################################################
+
+lvl = ch.Level(segments=20, start_full=True, color=150, grav_scale=0)
+
+midi = ch.CHMIDI("Stereo Madness.mid", pitch=2)
+
+lvl.add(midi)
+
+# Set up viewing.
+lvl.add(Player(1450, 1450))
+lvl.add(Collectable(1450, 1450, zoom=-2, is_trigger=True, disable_on_trigger=True))
+
+lvl.to_file("audio_conversion.txt")
+
+
+########################################################################################################################
