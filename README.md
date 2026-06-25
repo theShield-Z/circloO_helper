@@ -13,9 +13,10 @@
   - [Pixel Builder](#pixel-builder)
   - [Text Conversion](#text-conversion)
   - [Image Conversion (raster)](#image-conversion-raster)
-  - [Image Conversion (vector)](#image-conversion-vector)
   - [Video Conversion](#video-conversion)
   - [Dithering Module](#dithering)
+  - [Image Conversion (vector)](#image-conversion-vector)
+  - [Audio/MIDI Conversion](#audio-midi-conversion)
   - [Point Plotter](#point-plotter)
 - [API](#api)
   - [Level](#level)
@@ -43,10 +44,12 @@
     - [CHImage](#chimage)
     - [CHVideo](#chvideo)
     - [CHSVG](#chsvg)
+    - [CHMIDI](#chmidi)
     - [Dithering Module](#dithering-1)
 - [To-Do & Know Issues](#to-do--known-issues)
 
 <hr>
+
 
 # circloO Helper
 
@@ -107,6 +110,7 @@ lvl.add(plr)
 print(lvl.to_clipboard())   # or simply print(lvl) or lvl.to_clipboard()
 lvl.to_file("my_circloO_level.txt")
 ```
+
 
 ## Levels
 
@@ -234,6 +238,7 @@ Custom Objects need to override two functions: `__init__()` and `build_objs()`:
           return self._obj_cache
       ```
 
+
 ## Tools
 
 circloO Helper contains a few tools to help with repeated tasks, each a function:
@@ -344,6 +349,18 @@ You can also easily add SVG vector images to a Level using the `CHSVG` class. Th
 svg = CHSVG("examples/mysvg.svg")
 ```
 
+
+## Audio (MIDI) Conversion
+
+Audio conversion is also fairly simple using the `CHMIDI` class. The class takes an input filepath for a MIDI file and optional parameters, including sound customization and sustained note handling.
+
+See the [CHMIDI API section](#chmidi) for information on how to customize sounds by track.
+
+```python
+midi = CHMIDI("examples/Stereo Madness.mid")
+```
+
+
 ## Point Plotter
 
 You can plot a set of points using the `PointPlotter` class. The class takes an Object type (currently limited to Line, Rope, Slider, or DistanceConnection) and any number of points.
@@ -356,6 +373,7 @@ plot = PointPlotter(Rope, *pts)
 Set the `close` attribute to True to connect the final point to the initial point (thus making a closed shape).
 
 <hr>
+
 
 # API
 
@@ -393,6 +411,7 @@ Set the `close` attribute to True to connect the final point to the initial poin
   - `to_file(path: str)` - Saves the level to `path` filepath
     - You can then import it to the game using the Import > From File
 
+
 ### Level Parsers
 
 - `ch.parse(level_text: str)` - Parses and returns circloO level from string `level_text`
@@ -402,6 +421,7 @@ Set the `close` attribute to True to connect the final point to the initial poin
 - `ch.read_clipboard()` - Parses and returns circloO levels from your clipboard
   - To be used with the in-game functionality Save > Export to Clipboard
   - Reads clipboard contents, then calls `parse()`
+
 
 ## Object
 
@@ -489,6 +509,7 @@ Set the `close` attribute to True to connect the final point to the initial poin
       - All parameters except `sound` are equivalent to the attributes of `Collectable.Sound`
       - `sound (Collectable.Sound, None)` - If not None, this will override all other parameters and set this as the collectable's sound
     - `mute()` - Makes the collectable play no sound upon collection, or unmutes it if alread muted
+<a id="collectable-sounds"></a>
   - `Collectable.Sound` inner class
     - Attributes:
       - `group (str)` - Sound type
@@ -866,7 +887,6 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
         return self._obj_cache
       ```
 
-
 ### Included Custom Objects
 
 - Location: `ch.custom_objects`
@@ -1039,6 +1059,56 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
   - `y_pos (float)` - Y-coordinate of top-left corner; default is 1500 (center)
   - `scale (float)` - Scale of image; default is 1 (no scaling)
   - `line_thickness (float)` - Thickness of each line; default is 3
+
+
+### CHMIDI
+
+- Location: `ch.CHMIDI`
+- Child of `CustomObject`
+- Converts a MIDI (.mid) file into circloO objects.
+- The conversion follows the General MIDI standard for converting percussion, assuming that all percussion notes are on channel 10 of the score.
+  - Default percussion instrument sounds are provided.
+  - All sounds can be overridden by track with `track_params` in case the General standard is not followed.
+- Attributes:
+  - `filepath (str)` - Path to midi file
+  - `start_x (float)` - X-position of top-left-most trigger; default is 1500 (center of level)
+  - `start_y (float)` - Y-position of top-left-most trigger; default is 1500 (center of level)
+  - `min_duration (float)` - The minimum necessary duration of a note (in seconds) before a sustained trigger is used instead of a simpler one
+    - To disable this & use simple triggers for every note, set this to a very large value (e.g., 9999)
+  - `long_start_x (float)` - X-position of top-left trigger of the sustained trigger section; default is None
+  - `long_start_y (float)` - Y-position of top-left trigger of the sustained trigger section; default is None
+    - If None, the section will be placed just to the left of the main body of the system.
+    - The sustained trigger section will be a vertical line of triggers with two columns.
+  - `pitch (float)` - Default pitch of all trigger sounds if none is provided for the track or note in `track_params`; default is 1
+  - `volume (float)` - Default volume of all trigger sounds if none is provided for the track or note in `track_params`; default is 1
+  - `labels (bool)` - If True, tracks will be labeled in-game (using the `Text` converter) with their names; default is True
+  - `track_params (dict)` - Dictionary of track sound overrides.
+  - Syntax:
+    - `track_params` is a dictionary where each key is the number of a track within the score. 
+    - For each track, you can set the default pitch and default volume of the track, which overrides the default `pitch` and `volume` attributes of the Object. 
+    - For each track, you can also further override specific notes within the track by setting their full Collectable Sounds (see [Object Shapes > Collectable.Sound](#collectable-sounds)).
+      - Sound attributes are provided as a tuple: `(group, note, pitch, volume)`
+      - [This](https://musescore.org/sites/musescore.org/files/General%20MIDI%20Standard%20Percussion%20Set%20Key%20Map.pdf) pdf from Musescore is a good resource that shows each note's integer value, their corresponding note, and their corresponding percussion instrument sound.
+    - Any value within each layer of the dictionary can be omitted.
+    - Pitch/volume override hierarchy (from highest to lowest priority): `note_value` in `"note_overrides"` -> `"pitch"`/`"volume"` in `track_num` -> `CHMIDI.pitch`/`CHMIDI.volume`
+    ```python
+    track_params = {
+      track_num:                # The number (as an integer) of the track
+      {
+        "pitch": ...,           # The default pitch used for all triggers in this track if not further overridden in "note_overrides" 
+        "volume": ...,          # The default volume used for all triggers in this track if not further overridden in "note_overrides"
+        "note_overrides":       # Overrides specific note values within the track.
+        {
+          # note_value is an integer label of the midi note. See the General MIDI standard for more information.
+          note_value: (group, note, pitch, volume),   # A tuple of the sound's attributes. Uses the same scheme as Collectable.Sound
+          note_value: (...),    # You can override any number of notes within the track
+          note_value: (...),
+        }
+      },
+      track_num: {...},         # You can add overrides for any number of tracks within the score
+      track_num: {...}
+    }
+    ```
 
 
 ### Dithering
