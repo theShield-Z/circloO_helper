@@ -12,24 +12,24 @@ from .text import Text
 _NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F',
                'F#', 'G', 'G#', 'A', 'A#', 'B']
 
-_DRUM_MAP = {35: ('drum', 1, 1, 1),
-             36: ('drum', 5, 1, 1),
-             38: ('drum', 0, 1, 1),
-             40: ('drum', 2, 1, 1),
-             42: ('house', 10, 2, 1),
-             44: ('house', 18, 2, 2),
-             46: ('drum', 9, 1, 1),
-             49: ('drum', 3, 1, 1),
-             51: ('house', 18, 1, 1),
-             45: ('drum', 7, .8, 1),
-             47: ('drum', 7, .9, 1),
-             48: ('drum', 7, 1.1, 1),
-             50: ('drum', 7, 1.3, 1),
-             39: ('drum', 4, 1, 1),
-             54: ('drum', 4, 1, 1),
-             56: ('house', 21, 1, 1),
-             57: ('drum', 3, 1, 1),
-             52: ('house', 18, 1, 1)}
+_DRUM_MAP = {35: ('drum', 1, 1, 1),     # Acoustic Bass Drum
+             36: ('drum', 5, 1, 1),     # Bass Drum 1
+             38: ('drum', 0, 1, 1),     # Acoustic Snare
+             40: ('drum', 2, 1, 1),     # Electric Snare
+             42: ('house', 10, 2, 1),   # Closed Hi-Hat
+             44: ('house', 18, 2, 2),   # Pedal Hi-Hat
+             46: ('drum', 9, 1, 1),     # Open Hi-Hat
+             49: ('drum', 3, 1, 1),     # Crash 1
+             51: ('house', 18, 1, 1),   # Ride 1
+             45: ('drum', 7, .8, 1),    # Low Tom
+             47: ('drum', 7, .9, 1),    # Low-Mid Tom
+             48: ('drum', 7, 1.1, 1),   # Hi-Mid Tom
+             50: ('drum', 7, 1.3, 1),   # High Tom
+             39: ('drum', 4, 1, 1),     # Hand Clap
+             54: ('drum', 3, 3, 1),     # Tambourine
+             56: ('house', 21, 1, 1),   # Cowbell
+             57: ('drum', 3, 1, 1),     # Crash 2
+             52: ('house', 18, 1, 1)}   # China
 
 
 class CHMIDI(CustomObject):
@@ -82,9 +82,9 @@ class CHMIDI(CustomObject):
         ticks_per_beat = midi.ticks_per_beat
         tempo = 500000  # default: 120 BPM
 
+        # Collectable coordinates.
         x = self.start_x
         y = self.start_y
-
         long_x = self.long_start_x
         long_y = self.long_start_y
 
@@ -107,7 +107,7 @@ class CHMIDI(CustomObject):
 
                 # GET MIDI DATA ########################################################################################
 
-                # Advance time
+                # Advance time.
                 delta_seconds = tick2second(
                     msg.time,
                     ticks_per_beat,
@@ -117,16 +117,16 @@ class CHMIDI(CustomObject):
                 current_ticks += msg.time
                 current_seconds += delta_seconds
 
-                # Tempo changes affect subsequent messages
+                # Tempo changes affect subsequent messages.
                 if msg.type == "set_tempo":
                     tempo = msg.tempo
                     continue
 
-                # Note start
+                # Note start.
                 if msg.type == "note_on" and msg.velocity > 0:
                     active_notes[msg.note] = current_seconds
 
-                # Note end
+                # Note end.
                 elif msg.type == "note_off" or (
                         msg.type == "note_on" and msg.velocity == 0
                 ):
@@ -134,14 +134,17 @@ class CHMIDI(CustomObject):
 
                         note_name = self._note_number_to_name(msg.note)
                         note_value = msg.note
-                        start_time = active_notes.pop(msg.note)
+                        start_time = active_notes.pop(msg.note)     # Removes note from active_notes
                         duration = current_seconds - start_time
 
                         # CONVERT TO CIRCLOO ###########################################################################
 
+                        # Create the sound.
+
                         sound = None
 
                         if note_overrides is not None and note_overrides.get(note_value) is not None:
+                            # Use sound profile provided in self.track_params
                             group, value, pitch, volume = note_overrides[note_value]
                             sound = Collectable.Sound(group, value, volume, pitch)
 
@@ -157,14 +160,17 @@ class CHMIDI(CustomObject):
                                     sound = Collectable.Sound()
 
                             else:
-                                # In-game note notation is offset 36 from midi representation
+                                # Use a piano sound with self.volume and self.pitch.
+                                #   In-game note numeration is offset by 36 from midi representation.
                                 sound = Collectable.Sound('piano', note_value - 36, volume, pitch)
                                 while sound.note < 0:
+                                    # Ensure sound is not negative.
                                     sound.pitch /= 2
                                     sound.note += 12
 
                         if duration > self.min_duration:
-                            # Use sustained triggers instead.
+                            # Replay the sound every frame when the note is sustained for a while.
+
                             cbl = InputTrigger(1450, 1450, 'every_frame', start_disabled=True)
                             cbl.sound = sound
 
@@ -204,6 +210,7 @@ class CHMIDI(CustomObject):
             self._obj_cache.extend(cbls.values())
 
             if self.labels:
+                # Label each track.
                 label = Text(track.name, SolidRectangle(x + len(cbls) * 50, y - 10, 5, 5))
                 self._obj_cache.extend(label.build_objs())
 
