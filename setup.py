@@ -5,7 +5,7 @@ with open("README.md", 'r') as f:
 
 setup(
     name='circloo_helper',
-    version='1.0.0',
+    version='1.1.0',
     packages=find_packages(),
     description='Build and edit circloO levels using Python',
     author='Shield Z',
@@ -24,10 +24,4 @@ setup(
     ],
     long_description=description,
     long_description_content_type="text/markdown",
-    # Unsure about making these optional installs
-    # extras_require={
-    #     "full": [...]
-    #     "image_converter": [...]
-    #     "video_converter": [...]
-    # }
 )
