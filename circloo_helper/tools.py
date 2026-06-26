@@ -9,6 +9,52 @@ from .circloo_objects import Line, Arc, Curve, Dummy, Portal
 __all__ = ["polar", "pivot", "translate", "scale", "dimensions", "centroid", "push_to_android", "combine"]
 
 
+def _get_curve_bbox(obj: Curve):
+    """Returns bounding box as (xmin, xmax, ymin, ymax)"""
+    from svgpathtools import CubicBezier
+    p0 = complex(obj.start_x, obj.start_y)
+    p1 = complex(obj.ctr1_x, obj.ctr1_y)
+    p2 = complex(obj.ctr2_x, obj.ctr2_y)
+    p3 = complex(obj.end_x, obj.end_y)
+    return CubicBezier(p0, p1, p2, p3).bbox()
+
+
+def _get_arc_bbox(obj: Arc):
+    """Returns bounding box as (xmin, xmax, ymin, ymax)"""
+
+    start = math.radians(obj.start_angle)
+    end = math.radians(obj.end_angle)
+    tau = math.tau
+
+    # Normalize so end >= start
+    while end < start:
+        end += tau
+
+    # Candidate angles (endpoints & cardinal directions)
+    candidate_angles = [start, end]
+
+    for angle in (0, tau / 4, tau / 2, 3 * tau / 4):
+        a = angle
+        while a < start:
+            a += tau
+        if a <= end:
+            candidate_angles.append(a)
+
+    xs = []
+    ys = []
+
+    for a in candidate_angles:
+        xs.append(obj.center_x + obj.radius * math.cos(a))
+        ys.append(obj.center_y + obj.radius * math.sin(a))
+
+    return (
+        min(xs),
+        max(xs),
+        min(ys),
+        max(ys),
+    )
+
+
 def polar(r, theta, start_x=1500, start_y=1500, in_degrees=True):
     """Converts a point in polar coordinates to rectangular coordinates."""
     if in_degrees:  # Angle given in degrees, convert to radians.
@@ -339,8 +385,9 @@ def dimensions(obj: Object):
     if isinstance(obj, _os.Circle):
         width = height = obj.radius * 2 + 1     # actual circle radius is .5 greater than written radius
     elif isinstance(obj, Arc):
-        ### TODO: possibly alter this for the minimum circumrectangle for the given start/end angles
-        width = height = (obj.radius + obj.thickness) * 2
+        xmin, xmax, ymin, ymax = _get_arc_bbox(obj)
+        width = xmax - xmin + obj.thickness * 2
+        height = ymax - ymin + obj.thickness * 2
     elif isinstance(obj, _os.Rectangle):
         width = obj.width
         height = obj.height
@@ -355,9 +402,9 @@ def dimensions(obj: Object):
         if height == 0:
             height = obj.thickness * 2
     elif isinstance(obj, Curve):
-        ### TODO: scale as bounding box (circumrectangle) of curve
-        width = abs(obj.start_x - obj.end_x)
-        height = abs(obj.start_y - obj.end_y)
+        xmin, xmax, ymin, ymax = _get_curve_bbox(obj)
+        width = xmax - xmin
+        height = ymax - ymin
     elif isinstance(obj, _os.Collectable):
         width = height = 50
     elif isinstance(obj, Portal):
@@ -392,12 +439,14 @@ def centroid(obj: Object):
         cy = (obj.y1 + obj.y2) / 2
 
     elif isinstance(obj, Arc):
-        cx = obj.center_x
-        cy = obj.center_y
+        xmin, xmax, ymin, ymax = _get_arc_bbox(obj)
+        cx = (xmin + xmax) / 2
+        cy = (ymin + ymax) / 2
 
     elif isinstance(obj, Curve):
-        cx = (obj.start_x + obj.ctr1_x + obj.ctr2_x + obj.end_x) / 4
-        cy = (obj.start_y + obj.ctr1_y + obj.ctr2_y + obj.end_y) / 4
+        xmin, xmax, ymin, ymax = _get_curve_bbox(obj)
+        cx = (xmin + xmax) / 2
+        cy = (ymin + ymax) / 2
 
     elif isinstance(obj, Portal):
         cx = obj.portal_x

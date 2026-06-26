@@ -1163,9 +1163,6 @@ Ordered dithering patterns:
   - Implement other connection types.
   - Possibly allow plotted points to be Moveable objects in some way.
   - Re-implement image plotter from before the refactor.
-- `tools.dimensions`
-  - Alter `Arc` dimensions to return minimum bounding box, given the start/end angles (e.g., an arc from 0° to 180° has half the height of a full circle).
-  - Alter `Curve` dimensions to return the bounding box of the curve.
 - `text.Text`
   - Implement more sophisticated tabulation with `'\n'` - instead of always jumping a fixed width, it each tab should line up with the tabs on other lines.
 - `svg_converter.CHSVG`
