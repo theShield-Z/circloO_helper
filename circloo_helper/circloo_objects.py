@@ -1114,7 +1114,8 @@ class Collectable(_os.Collectable):
                  is_trigger: bool = False,
                  collect_from_object: bool = False,
                  start_disabled: bool = False,
-                 disable_on_trigger: bool = False):
+                 disable_on_trigger: bool = False,
+                 sound: _os.Collectable.Sound | None = None):
         """
         Collectable circle
         :param x_pos:               Position of center
@@ -1126,6 +1127,7 @@ class Collectable(_os.Collectable):
         :param collect_from_object: If True, changes collectable to only be collected upon collision with a non-player object; default is False
         :param start_disabled:      If True, collectable starts deactivated and must be reactivated by another trigger to collect; default is False
         :param disable_on_trigger:  If True, collectable deactivates after triggering; default is False
+        :param sound:               The sound that plays when the collectable is activated; default is None
         """
         super().__init__()
         self.x = x_pos
@@ -1137,6 +1139,7 @@ class Collectable(_os.Collectable):
         self.collect_from_object = collect_from_object
         self.start_disabled = start_disabled
         self.disable_on_trigger = disable_on_trigger
+        self.sound = sound
 
     def _to_str(self, enumeration: bool = False) -> str:
         tag = 'io' if self.collect_from_object else 'i'
@@ -1156,7 +1159,8 @@ class GravityCollectable(_os.Collectable):
                  is_trigger: bool = False,
                  collect_from_object: bool = False,
                  start_disabled: bool = False,
-                 disable_on_trigger: bool = False):
+                 disable_on_trigger: bool = False,
+                 sound: _os.Collectable.Sound | None = None):
         """
         Collectable circle that changes gravity.
         :param x_pos:               Position of center
@@ -1170,6 +1174,7 @@ class GravityCollectable(_os.Collectable):
         :param collect_from_object: If True, changes collectable to only be collected upon collision with a non-player object; default is False
         :param start_disabled:      If True, collectable starts deactivated and must be reactivated by another trigger to collect; default is False
         :param disable_on_trigger:  If True, collectable deactivates after triggering; default is False
+        :param sound:               The sound that plays when the collectable is activated; default is None
         """
         super().__init__()
         self.x = x_pos
@@ -1181,6 +1186,7 @@ class GravityCollectable(_os.Collectable):
         self.collect_from_object = collect_from_object
         self.start_disabled = start_disabled
         self.disable_on_trigger = disable_on_trigger
+        self.sound = sound
 
         self.grav_dir = grav_dir
         self.grav_strength = grav_strength
@@ -1204,6 +1210,7 @@ class SizeCollectable(_os.Collectable):
                  collect_from_object: bool = False,
                  start_disabled: bool = False,
                  disable_on_trigger: bool = False,
+                 sound: _os.Collectable.Sound | None = None,
                  by_player_percent: bool = True):
         """
         Collectable circle that changes player size.
@@ -1218,6 +1225,7 @@ class SizeCollectable(_os.Collectable):
         :param start_disabled:      If True, collectable starts deactivated and must be reactivated by another trigger to collect; default is False
         :param disable_on_trigger:  If True, collectable deactivates after triggering; default is False
         :param by_player_percent:   New radius is normally determined by percentage of initial Player radius; if False, size is determined by base unit size instead; default is True
+        :param sound:               The sound that plays when the collectable is activated; default is None
         """
         super().__init__()
         self.x = x_pos
@@ -1229,6 +1237,7 @@ class SizeCollectable(_os.Collectable):
         self.collect_from_object = collect_from_object
         self.start_disabled = start_disabled
         self.disable_on_trigger = disable_on_trigger
+        self.sound = sound
 
         self.size = size
         self.by_player_percent = by_player_percent
@@ -1251,7 +1260,8 @@ class DisconnectCollectable(_os.Collectable):
                  is_trigger: bool = False,
                  collect_from_object: bool = False,
                  start_disabled: bool = False,
-                 disable_on_trigger: bool = False):
+                 disable_on_trigger: bool = False,
+                 sound: _os.Collectable.Sound | None = None):
         """
         Collectable circle that disconnects player from all connections.
         :param x_pos:               Position of center
@@ -1263,6 +1273,7 @@ class DisconnectCollectable(_os.Collectable):
         :param collect_from_object: If True, changes collectable to only be collected upon collision with a non-player object; default is False
         :param start_disabled:      If True, collectable starts deactivated and must be reactivated by another trigger to collect; default is False
         :param disable_on_trigger:  If True, collectable deactivates after triggering; default is False
+        :param sound:               The sound that plays when the collectable is activated; default is None
         """
         super().__init__()
         self.x = x_pos
@@ -1274,6 +1285,7 @@ class DisconnectCollectable(_os.Collectable):
         self.collect_from_object = collect_from_object
         self.start_disabled = start_disabled
         self.disable_on_trigger = disable_on_trigger
+        self.sound = sound
 
     def _to_str(self, enumeration: bool = False) -> str:
         tag = 'irbo' if self.collect_from_object else 'irb'
@@ -1293,7 +1305,8 @@ class SpeedCollectable(_os.Collectable):
                  is_trigger: bool = False,
                  collect_from_object: bool = False,
                  start_disabled: bool = False,
-                 disable_on_trigger: bool = False):
+                 disable_on_trigger: bool = False,
+                 sound: _os.Collectable.Sound | None = None):
         """
         Collectable circle that changes player speed.
         :param x_pos:               Position of center
@@ -1307,6 +1320,7 @@ class SpeedCollectable(_os.Collectable):
         :param collect_from_object: If True, changes collectable to only be collected upon collision with a non-player object; default is False
         :param start_disabled:      If True, collectable starts deactivated and must be reactivated by another trigger to collect; default is False
         :param disable_on_trigger:  If True, collectable deactivates after triggering; default is False
+        :param sound:               The sound that plays when the collectable is activated; default is None
         """
         super().__init__()
         self.x = x_pos
@@ -1318,6 +1332,7 @@ class SpeedCollectable(_os.Collectable):
         self.collect_from_object = collect_from_object
         self.start_disabled = start_disabled
         self.disable_on_trigger = disable_on_trigger
+        self.sound = sound
 
         self.speed = speed
         self.density = density
@@ -1338,7 +1353,8 @@ class SpecialCollectable(_os.Collectable):
                  is_trigger: bool = False,
                  collect_from_object: bool = False,
                  start_disabled: bool = False,
-                 disable_on_trigger: bool = False):
+                 disable_on_trigger: bool = False,
+                 sound: _os.Collectable.Sound | None = None):
         """
         Collectable circle that performs an action on an object connected to it via a special connection.
         :param x_pos:               Position of center
@@ -1350,6 +1366,7 @@ class SpecialCollectable(_os.Collectable):
         :param collect_from_object: If True, changes collectable to only be collected upon collision with a non-player object; default is False
         :param start_disabled:      If True, collectable starts deactivated and must be reactivated by another trigger to collect; default is False
         :param disable_on_trigger:  If True, collectable deactivates after triggering; default is False
+        :param sound:               The sound that plays when the collectable is activated; default is None
         """
         super().__init__()
         self.x = x_pos
@@ -1361,6 +1378,7 @@ class SpecialCollectable(_os.Collectable):
         self.collect_from_object = collect_from_object
         self.start_disabled = start_disabled
         self.disable_on_trigger = disable_on_trigger
+        self.sound = sound
 
     def _to_str(self, enumeration: bool = False) -> str:
         tag = 'ispo' if self.collect_from_object else 'isp'
@@ -1376,9 +1394,10 @@ class InputTrigger(_os.Collectable):
                  action: str = 'pressed',
                  zoom: int | float = -1,
                  start_disabled: bool = False,
-                 disable_on_trigger: bool = False):
+                 disable_on_trigger: bool = False,
+                 sound: _os.Collectable.Sound | None = None):
         """
-
+        Performs an action on an Object connected to it via a SpecialConnection once a certain input has been pressed
         :param x_pos:               Position of center
         :param y_pos:               Position of center
         :param input:               Which input collectable triggers from:
@@ -1394,6 +1413,7 @@ class InputTrigger(_os.Collectable):
         :param zoom:                Changes camera zoom upon collection; -1 --> no change, -2 --> full level; default is -1
         :param start_disabled:      If True, collectable starts deactivated and must be reactivated by another trigger to collect; default is False
         :param disable_on_trigger:  If True, collectable deactivates after triggering; default is False
+        :param sound:               The sound that plays when the collectable is activated; default is None
         """
         super().__init__()
         self.x = x_pos
@@ -1403,6 +1423,7 @@ class InputTrigger(_os.Collectable):
         self.zoom = zoom
         self.start_disabled = start_disabled
         self.disable_on_trigger = disable_on_trigger
+        self.sound = sound
 
     def _to_str(self, enumeration: bool = False) -> str:
 
