@@ -470,6 +470,8 @@ class Text(CustomObject):
             if char == '\n':
                 # New line.
                 obj = translate(obj, 0, height * 6)
+                obj = translate(obj, centroid(self.obj)[0] - centroid(obj)[0])
+                prev_width = 0
                 continue
             elif char == '\r':
                 # Carriage Return (move to initial x-value)

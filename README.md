@@ -308,7 +308,7 @@ You can easily add text to a Level using the `Text` class. The class takes a str
 txt = ch.Text("Hello, world!", SolidRectangle(1500, 1500, 10, 10))
 ```
 
-`'\n'`, `'\r'`, and `'\t'` characters are also supported (though note that `'\n'` only moves to the next line, and does not perform a carriage return—use `'\r'` as well for that)
+`'\n'`, `'\r'`, and `'\t'` characters are also supported.
 
 
 ## Image Conversion (raster)
@@ -1006,7 +1006,8 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
 - Location: `ch.Text`
 - Child of `CustomObject`
 - Converts a string of text into circloO Objects. 
-- Allows use of \n (new line), \r (carriage return), and \t (tabulation).
+- Allows use of `'\n'` (new line), `'\r'` (carriage return), and `'\t'` (tabulation).
+  - As is standard of most modern implementations, `'\n'` will also perform a carriage return.
 - Unsupported characters will be replaced with a large blank box.
 - A `Text` object is a composition of `Pixels` objects.
 - Attributes:
