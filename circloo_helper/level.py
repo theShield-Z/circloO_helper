@@ -47,7 +47,6 @@ class Level:
         self.color = color % 256
 
         # Level Modifiers
-        ### TODO: change single music parameter to music_mode and music_choice (based on le_import_script)
         self.music = music
         self.recommend_sfx = recommend_sfx
         self.default_line_thickness = default_line_thickness

@@ -1,5 +1,7 @@
 """
-TODO: more complex svgs, like those made with inkscape, seem to have have incorrect path offsets. more testing needs to be done.
+TODO: more complex svgs, like those made with advanced inkscape tools, seem to have incorrect path offsets. more testing needs to be done
+TODO: implement filled paths using the Polygon custom object
+TODO: also convert embedded images using CHImage
 """
 
 from svgpathtools import svg2paths2, parse_path, path

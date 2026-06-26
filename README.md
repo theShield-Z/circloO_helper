@@ -1159,6 +1159,18 @@ Ordered dithering patterns:
 
 # To-Do & Known Issues
 
-TODO: Implement this section.
+- `plotters.PointPlotter`
+  - Implement other connection types.
+  - Possibly allow plotted points to be Moveable objects in some way.
+  - Re-implement image plotter from before the refactor.
+- `tools.dimensions`
+  - Alter `Arc` dimensions to return minimum bounding box, given the start/end angles (e.g., an arc from 0° to 180° has half the height of a full circle).
+  - Alter `Curve` dimensions to return the bounding box of the curve.
+- `text.Text`
+  - Implement more sophisticated tabulation with `'\n'` - instead of always jumping a fixed width, it each tab should line up with the tabs on other lines.
+- `svg_converter.CHSVG`
+  - More complex SVGs, such as those made with advanced Inkscape tools, seem to have incorrect path offsets. More testing needs to be done to see how to fix this.
+  - Implement filled paths using the `Polygon` Custom Object.
+  - Also convert embedded raster images with `CHImage`.
 
-For now, search through the code for comments prefixed by `TODO: `
+Each item in this list can be found in their respective modules within comments prefixed by `TODO`.

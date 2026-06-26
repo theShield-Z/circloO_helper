@@ -1,7 +1,3 @@
-"""
-TODO: add support for track params (allow users to set pitch, volume, instrument, etc. of each track as a dict)
-    especially necessary for percussion tracks
-"""
 from mido import MidiFile, tick2second
 
 from .object import CustomObject
