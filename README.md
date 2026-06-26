@@ -8,7 +8,7 @@
     - [Shapes](#shapes)
     - [Types](#types)
   - [Custom Objects](#custom-objects)
-    - [Creating your own](#creating-custom-objects)
+    - [Creating Custom Objects](#creating-custom-objects)
   - [Tools](#tools)
   - [Pixel Builder](#pixel-builder)
   - [Text Conversion](#text-conversion)
@@ -33,7 +33,6 @@
     - [Generators](#generators)
     - [Connections](#connections)
     - [Collectables](#collectables)
-    - [Connections](#connections)
   - [Custom Object](#custom-object)
     - [Included Custom Objects](#included-custom-objects)
   - [Tools](#tools)
@@ -46,14 +45,14 @@
     - [CHSVG](#chsvg)
     - [CHMIDI](#chmidi)
     - [Dithering Module](#dithering-1)
-- [To-Do & Know Issues](#to-do--known-issues)
+- [To-Do & Known Issues](#to-do--known-issues)
 
 <hr>
 
 
-# circloO Helper
+# [circloO Helper](https://github.com/theShield-Z/circloO_helper)
 
-circloO Helper is a Python library to programmatically generate and alter circloO levels.
+circloO Helper is a Python library for creating and editing levels for the physics platformer game [*circloO*](https://store.steampowered.com/app/2195630/circloO/). It supports procedural level generation, level parsing, custom composite objects, and conversion from text, image, videos, SVGs, and MIDI files.
 
 
 ## Main Features
@@ -67,6 +66,8 @@ circloO Helper is a Python library to programmatically generate and alter circlo
 
 ## Setup
 
+This library was built and tested with Python 3.13 on Windows 10, but most features should still work with any modern Python version and OS.
+
 Install with pip:
 ```commandline
 pip install circloo-helper
@@ -78,6 +79,19 @@ pip install .
 ```
 
 See the examples contained in [`examples/main.py`](https://github.com/theShield-Z/circloO_helper/tree/main/examples) for basic usage of most features.
+
+### Dependencies
+
+- numpy
+- Pillow (image conversion)
+- imageio & imageio-ffmpeg (video conversion)
+- svgpathtools-light (svg conversion)
+- mido (midi conversion)
+- pyperclip (reading/writing levels to clipboard)
+- numba (rectangle reduction algorithm speed)
+- tripy (polygon triangulation)
+
+All dependencies are installed automatically via pip.
 
 
 ## Basic Workflow
@@ -123,52 +137,56 @@ Existing levels created in-game can also be parsed and edited with this library.
 
 ## Objects
 
-Every object is a child class that inherits from ObjectShape and often also ObjectType, which themselves inherit from the base Object class in `object.py`.
+Objects are composed from two indepentend hierarchies:
+- `ObjectShape`: Shape determines geometry (Circle, Rectangle, Triangle, etc.)
+- `ObjectType`: Type determines physics behavior (Solid, Moveable, Generator, etc.)
+
+For example, `MoveableCircle` combines the `Circle` shape with the `Moveable` type. All circloO Objects inherit from `ObjectShape`, but `ObjectType` is optional. Objects may also inherit more than one Type
 
 See [Objects](#objects-1) for a list of all supported Objects and their attributes.
 
 ### Shapes
 
 Object shapes represent the shape or category of an object. Shapes include:
-- Circle
+- `Circle`
   - Circles have coordinates and a radius
-- Rectangle
+- `Rectangle`
   - Rectangles have coordinates, a width, and a height
-- Triangle
+- `Triangle`
   - Triangles have coordinates
-- Line
+- `Line`
   - Lines have a thickness
-- Connection
+- `Connection`
   - All connections have obj1 and obj2 attributes that reference the objects that they connect.
   - Note that, due to their levelscript representation, Glue is not a connection
-- Collectable
+- `Collectable`
   - Collectables have many attributes (see the [Collectable API](#collectables)), but the most important are:
     - Coordinates
     - `is_trigger` – determines whether it is a trigger 
     - `collect_from_object` – determines whether it is collected by Players or Moveable objects
-- Player
+- `Player`
   - The Player character
   - Players have coordinates, size, speed, and density
-- Other
+- `Other`
   - Other exists for objects that don't fall cleanly into other categories (portals, dummies, glue, etc.)
 
 ### Types
 
 Object types represent the physics type of an object. Types include:
-- Solid
+- `Solid`
   - Objects that do not move
   - Represented by a blue color in the level editor
-- Moveable
+- `Moveable`
   - Objects that move
   - Represented by an orange color in the level editor
-- Generator
+- `Generator`
   - Objects that can be spawned in or destroyed while playing the level
-  - All generator objects also inherit from Moveable
+  - All generator objects also inherit from `Moveable`
   - Represented by a green color in the level editor
-- Growing
+- `Growing`
   - Objects that grow when a Collectable expands the level
   - Represented by a light blue color in the level editor
-- Rotatable
+- `Rotatable`
   - Objects that rotate according to a speed and torque
   - Represented by a purple color in the level editor
 
@@ -200,6 +218,8 @@ for obj in outr_objs:
   lvl.add(Rope(obj, mc))    # Connect to the MoveableCircle with a Rope
 ```
 
+When a `CustomObject` is added to a level, its `build_objs()` method is automatically used to generate the underlying objects and add them to the level.
+
 ### Creating Custom Objects
   
 You can also create your own Custom Objects. A Custom Object should always inherit from `CustomObject`, and it is good practice to also inherit an Object Shape and Object Type if applicable. For example, OutlineRectangle is declared as `class OutlineRectangle(CustomObject, Solid, Rectangle)`.
@@ -207,7 +227,7 @@ You can also create your own Custom Objects. A Custom Object should always inher
 Custom Objects need to override two functions: `__init__()` and `build_objs()`:
 - `__init__()`
   - Should first call `super().__init__()`, then declare all attributes. 
-  - For example, if you were to create your own OutlineRectangle class, the `__init__()` function would like roughly like this:
+  - For example, if you were to create your own OutlineRectangle class, the `__init__()` function would look roughly like this:
     - ```python
       def __init__(self, x, y, width, height, thickness):
         super().__init__()
@@ -273,7 +293,7 @@ pxls = ch.Pixels(arr, SolidCircle(1500, 1500, 10))
 ```
 will create a checkerboard of Solid Circles with radii of 10 starting at (1500, 1500). 
 
-The input Object for building a 3D array must be a Generator Object Type. The 3rd dimension will be time, using the generator's `disappear_after` attribute as the duration of each frame.
+The input Object for building a 3D array must be a Generator Object Type. The 3rd dimension represents time, and frame duration is determined by the generator's `disappear_after` attribute.
 
 By default, if the input Object is a Rectangle Object Shape, Rectangles in a row and column will be merged wherever possible to reduce the number of objects that are created. The same will also be done for each frame of a 3D array.
 
@@ -295,7 +315,7 @@ txt = ch.Text("Hello, world!", SolidRectangle(1500, 1500, 10, 10))
 
 See [Image Conversion (vector)](#image-conversion-vector) for converting SVG images.
 
-You can easily add images (any common format) to a Level using the `CHImage` class. The class takes an input filepath, an Object, and a downsample factor, then dithers and thresholds the image into a 2D binary array that can be built with `Pixels`.
+You can easily add images (any common format) to a Level using the `CHImage` class. The class takes an input filepath, an Object, and a downsample factor, then dithers and thresholds the image into a 2D binary array that is built with `Pixels`.
 
 ```python
 img = ch.CHImage("mona_lisa.webp",
@@ -303,12 +323,12 @@ img = ch.CHImage("mona_lisa.webp",
                  4)
 ```
 
-`downsample_factor` is an integer input by which the size of the input image is divided—it should be higher for images with higher resolutions. There are also parameters to change the image thresholding, weight of each RGB channel, and the dithering algorithm (see [Dithering](#dithering))
+`downsample_factor` is an integer input by which the size of the input image is divided—it should be higher for images with higher resolutions. There are also parameters to change the image thresholding, weight of each RGB channel, and the dithering algorithm (see [Dithering](#dithering)).
 
 
 ## Video Conversion
 
-You can easily add images (any common format) to a Level using the `CHVideo` class. The class takes an input filepath, an Generator type Object, an output resolution, and an output fps, then dithers and thresholds each frame of the video into a 2D binary array that can be built with `Pixels`.
+You can easily add videos (any common format) to a Level using the `CHVideo` class. The class takes an input filepath, an Generator type Object, an output resolution, and an output fps, then dithers and thresholds each frame of the video into a 2D binary array that is built with `Pixels`.
 
 ```python
 vid = ch.CHVideo("Dancing Rick Astley Loop.mp4",
@@ -326,7 +346,7 @@ The `dithering` module includes a few tools and functions for dithering images. 
 - Floyd-Steinberg error diffusion dithering
 - Ordered dithering
 
-There is also an `undither()` function that returns an un-altered image.
+There is also an `undither()` function that returns the original image unchanged.
 
 All dithering functions take an image as input and returns the dithered image. The `ordered_dither()` function also takes a `pattern` argument. A few common or useful patterns are included in the module, but it is trivial to make your own.
 
@@ -363,7 +383,7 @@ midi = CHMIDI("examples/Stereo Madness.mid")
 
 ## Point Plotter
 
-You can plot a set of points using the `PointPlotter` class. The class takes an Object type (currently limited to Line, Rope, Slider, or DistanceConnection) and any number of points.
+You can plot a set of points using the `PointPlotter` class. The class takes an Object class (currently limited to `Line`, `Rope`, `Slider`, or `DistanceConnection`) and any number of points.
 
 ```python
 pts = (1510, 1510), (1540, 1520), (1530, 1520), (1520, 1570), (1530, 1540), (1570, 1530), (1580, 1530), (1590, 1500)
@@ -373,6 +393,9 @@ plot = PointPlotter(Rope, *pts)
 Set the `close` attribute to True to connect the final point to the initial point (thus making a closed shape).
 
 <hr>
+
+<br>
+The sections above are intended as a conceptual overview of the most important features. The following API reference documents every class, attribute, and method exposed by the library.
 
 
 # API
@@ -502,7 +525,8 @@ Set the `close` attribute to True to connect the final point to the initial poin
     - `is_trigger (bool)` - If True, the collectable will not increase the current segment or part of segment upon collection; default is False
     - `collect_from_object (bool)` - If True, the collectable will only be collected upon collision with Moveable objects, rather than collision with a Player; default is False
     - `start_disabled (bool)` - If True, the collectable starts deactivated and must be reactivated by a `SpecialConnection` to collect; default is False
-    - `disable_on_trigger (bool)` - If True, the collectable starts deactivated and must 
+    - `disable_on_trigger (bool)` - If True, the trigger will deactivate upon collection and must be reactivated by a `SpecialConnection` to collect again; default is False
+      - This attribute is irrelevant if the collectable is not a trigger (`is_trigger==True`).
     - `sound (Collectable.Sound)` - The sound that plays when the collectable is collected; default is None
   - Methods:
     - `set_sound(group, note, volume, pitch, play_if_no_function, sound)` - Updates the collectable's sound attribute.
@@ -647,7 +671,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
     - No additional attributes
   - `RotatableRectangle`
     - Type: `Moveable`
-      - Note that this does not inherit from `Rotatable`, despite its name
+      - Despite its name, this matches the game's implementation, where it behaves more like a `Moveable` than a true `Rotatable` object (it does not have a motor).
     - Shape: `Rectangle`
     - No additional attributes
   - `RotatableCircle`
@@ -997,8 +1021,8 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
 - Child of `CustomObject`
 - Connects several points in a straight line.
 - Attributes:
-  - `obj_type (Type)` - Type of circloO Object that displays a straight line
-    - Supported Types: `Line`, `Rope`, `Slider`, `DistanceConnection`
+  - `obj_type (class)` - Type of circloO Object that displays a straight line
+    - Supported Objects: `Line`, `Rope`, `Slider`, `DistanceConnection`
   - `points (tuple[float])` - Any number of (x, y) points
   - `close (bool)` - If True, connects the ending point to the starting point with another line, making a closed polygon; default is True
   - `line_thickness (float)` - If `obj_type` is `Line`, the thickness of each Line; default is 3
@@ -1010,14 +1034,14 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
 - Child of `CustomObject`
 - Converts an image into circloO objects via dithering and grayscale conversion.
 - Uses `Pixels` to create final array of Objects.
-- Note that you primitive support for this is included in-game with Ctrl+Shift+F4
+- Note that primitive support for this is included in-game with Ctrl+Shift+F4
   - Does not dither and converts everything into `MoveableRectangle` objects
 - Attributes:
   - `filepath (str)` - Path to input image
     - Image is opened using the PIL library, so most common extensions are supported.
   - `obj (Object)` - Object to be tiled into image. 
     - The coordinates of this Object will be used as the top-left corner of the image.
-  - `downsample_factor (int)` - Factor to donwscale/downsample image
+  - `downsample_factor (int)` - Factor to downscale/downsample image
     - 1 will keep the image the same resolution
     - For images with higher resolutions, it is recommended to increase this value.
   - `threshold (float)` - Threshold for binarization; default is 0.5
@@ -1093,7 +1117,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
     - Pitch/volume override hierarchy (from highest to lowest priority): `note_value` in `"note_overrides"` -> `"pitch"`/`"volume"` in `track_num` -> `CHMIDI.pitch`/`CHMIDI.volume`
     ```python
     track_params = {
-      track_num:                # The number (as an integer) of the track
+      track_num:                # Track number (integer)
       {
         "pitch": ...,           # The default pitch used for all triggers in this track if not further overridden in "note_overrides" 
         "volume": ...,          # The default volume used for all triggers in this track if not further overridden in "note_overrides"
