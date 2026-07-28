@@ -194,7 +194,8 @@ Object types represent the physics type of an object. Types include:
 ## Custom Objects
 
 Custom Objects are objects that are not natively in circloO, but can be created by composing multiple basic objects together. 
-All Custom Objects inherit from the `CustomObject` base class, and they can be added to Levels just like regular Objects using `Level.add()`. 
+All Custom Objects inherit from the `CustomObject` base class, and they can be added to Levels just like regular Objects using `Level.add()`.
+Attributes of a `CustomObject` can **not** be updated after it has been added to a Level with `Level.add()`.
 
 circloO Helper contains a few Custom Objects:
 - `OutlineRectangle`
@@ -204,7 +205,7 @@ circloO Helper contains a few Custom Objects:
 - `Polygon`
   - A Solid polygon, comprising SolidTriangles.
 
-If you need more control over the base objects that a Custom Object is composed of, you can store them in a new list variable by calling the `build_objs()` method, alter them as needed, and add the contents of that list to the level. For example, if you want to connect all four sides of an OutlineRectangle to a MoveableCircle with a Rope:
+If you need more control over the base objects that a Custom Object comprises, you can store them in a new list variable by calling the `get_objs()` method, alter them as needed, and add the contents of that list to the Level. For example, if you want to connect all four sides of an OutlineRectangle to a MoveableCircle with a Rope:
 
 ```python
 lvl = ch.Level()
@@ -212,22 +213,22 @@ lvl = ch.Level()
 mc = MoveableCircle(1500, 1800, 20)
 lvl.add(mc)
 
-outr_objs = OutlineRectangle(1500, 1500, 200, 150).build_objs()
+outr_objs = OutlineRectangle(1500, 1500, 200, 150).get_objs()
 for obj in outr_objs:
   lvl.add(obj)              # Add the object to the level
   lvl.add(Rope(obj, mc))    # Connect to the MoveableCircle with a Rope
 ```
 
-When a `CustomObject` is added to a level, its `build_objs()` method is automatically used to generate the underlying objects and add them to the level.
+When a `CustomObject` is added to a level, its `get_objs()` method is automatically used to generate the underlying objects and add them to the level.
 
 ### Creating Custom Objects
   
-You can also create your own Custom Objects. A Custom Object should always inherit from `CustomObject`, and it is good practice to also inherit an Object Shape and Object Type if applicable. For example, OutlineRectangle is declared as `class OutlineRectangle(CustomObject, Solid, Rectangle)`.
+You can also create your own Custom Objects. A Custom Object should always inherit from `CustomObject`, and it is good practice to also inherit an Object Shape and Object Type if applicable. For example, `OutlineRectangle` is declared as `class OutlineRectangle(CustomObject, Solid, Rectangle)`.
 
-Custom Objects need to override two functions: `__init__()` and `build_objs()`:
+Custom Objects need to override two functions: `__init__()` and `_build_objs()`:
 - `__init__()`
   - Should first call `super().__init__()`, then declare all attributes. 
-  - For example, if you were to create your own OutlineRectangle class, the `__init__()` function would look roughly like this:
+  - For example, if you were to create your own `OutlineRectangle` class, the `__init__()` function would look roughly like this:
     - ```python
       def __init__(self, x, y, width, height, thickness):
         super().__init__()
@@ -237,13 +238,13 @@ Custom Objects need to override two functions: `__init__()` and `build_objs()`:
         self.height = height
         self.thickness = thickness
       ```
-- `build_objs()`
-  - Should first call `super().build_objs()` and should return `self._obj_cache`. 
+- `_build_objs()`
+  - Should first call `super()._build_objs()` and should return `self._obj_cache`. 
   - All objects that are to be added to a level should be added to `self._obj_cache`, which is a simple list.  
-  - For example, if you were to create your own OutlineRectangle class, the `build_objs()` function would like roughly like this:
+  - For example, if you were to create your own `OutlineRectangle` class, the `_build_objs()` function would like roughly like this:
     - ```python
-      def build_objs(self):
-          super().build_objs()
+      def _build_objs(self):
+          super()._build_objs()
           
           top = SolidRectangle(self.x, self.y, self.width, self.thickness)
           left = SolidRectangle(self.x, self.y, self.thickness, self.height)
@@ -902,11 +903,13 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
   - Overrides: `repr()` & `str()`, `len()`
   - `get_id()` - Returns the index of the object within a Level
     - If the object has not yet been added to a Level, the returned id is -1
-  - `build_objs()` - Clears the object cache, adds all necessary objects to the cache, then returns the cache
+  - `get_objs()` - Returns a list of the underlying objects that compose the `CustomObject`
+    - Called automatically when the `CustomObject` is added to a `Level` using `Level.add()`
+  - `_build_objs()` - Initializes all underlying objects that compose the `CustomObject`, adds them to the `_obj_cache` attribute, and returns `_obj_cache`
     - To be overridden in all child classes with the following structure:
       ```python
-      def build_objs(self):
-        super().build_objs()  # Clears self._obj_cache
+      def _build_objs(self):
+        super()._build_objs()
         # Create objects and add them to self.obj_cache
         return self._obj_cache
       ```
@@ -918,7 +921,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
 - All converters and several other objects are also Custom Objects, but they have their own dedicated sections.
 - `OutlineRectangle`
   - Type: `Solid`
-  - Shape: `Rectangle`
+  - Shape: `Rectangle`, `Line`
   - A solid outline of a Rectangle, where the outline is along the inner edge.
   - No additional attributes
 - `MoveableArc`

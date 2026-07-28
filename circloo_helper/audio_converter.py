@@ -74,8 +74,8 @@ class CHMIDI(CustomObject):
         self.labels = labels
         self.track_params = {} if track_params is None else track_params
 
-    def build_objs(self):
-        super().build_objs()
+    def _build_objs(self):
+        super()._build_objs()
         midi = MidiFile(self.filepath)
 
         ticks_per_beat = midi.ticks_per_beat

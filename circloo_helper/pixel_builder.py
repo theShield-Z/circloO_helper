@@ -57,8 +57,8 @@ class Pixels(CustomObject):
         if not self._is_manually_scaled_y:
             self.scale_y = scale_y
 
-    def build_objs(self):
-        super().build_objs()
+    def _build_objs(self):
+        super()._build_objs()
         self._update_scale()
 
         if len(self.arr.shape) == 2:

@@ -32,8 +32,8 @@ class CHSVG(CustomObject):
         self.scale = scale
         self.line_thickness = line_thickness
 
-    def build_objs(self):
-        super().build_objs()
+    def _build_objs(self):
+        super()._build_objs()
 
         def offset_pos(pos: tuple, offset_x=self.x, offset_y=self.y):
             return pos[0] + offset_x / self.scale, pos[1] + offset_y / self.scale

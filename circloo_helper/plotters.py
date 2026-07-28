@@ -33,8 +33,8 @@ class PointPlotter(CustomObject):
         self.close = close
         self.line_thickness = line_thickness
 
-    def build_objs(self):
-        super().build_objs()
+    def _build_objs(self):
+        super()._build_objs()
 
         if self.cls is Rope or self.cls is DistanceConnection:
             offset = -100_000

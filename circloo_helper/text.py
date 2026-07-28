@@ -459,8 +459,8 @@ class Text(CustomObject):
         self.obj = obj
         self.spacing = spacing
 
-    def build_objs(self):
-        super().build_objs()
+    def _build_objs(self):
+        super()._build_objs()
 
         width, height = dimensions(self.obj)
 
@@ -491,7 +491,7 @@ class Text(CustomObject):
                 pix_arr = _CHARACTERS['missing']
 
             obj = translate(obj, prev_width * width)
-            self._obj_cache.extend(Pixels(pix_arr, obj).build_objs())
+            self._obj_cache.extend(Pixels(pix_arr, obj).get_objs())
 
             prev_width = len(pix_arr[0]) + self.spacing
 

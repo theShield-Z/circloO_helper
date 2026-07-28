@@ -32,37 +32,34 @@ class CHImage(CustomObject):
         """
         super().__init__()
 
-        self._img = Image.open(filepath)
-        self._obj = obj
-        self._downsample_factor = downsample_factor
-        self._show_img = show_img
-        self._threshold = threshold
-        self._channel_weights = channel_weights
-        self._ditherer = ditherer
+        self.filepath = filepath
+        self.obj = obj
+        self.downsample_factor = downsample_factor
+        self.show_img = show_img
+        self.threshold = threshold
+        self.channel_weights = channel_weights
+        self.ditherer = ditherer
 
-        self._is_already_built = False
+    def _build_objs(self):
+        super()._build_objs()
 
-    def build_objs(self):
-        if self._is_already_built:
-            return self._obj_cache
+        img = Image.open(self.filepath)
 
-        super().build_objs()
-
-        data = np.asarray(self._img).astype(np.float32) / 255   # normalize values as floats b/w 0 & 1
+        data = np.asarray(img).astype(np.float32) / 255   # normalize values as floats b/w 0 & 1
         if len(data.shape) == 2:    # add new channel if B&W image to preserve algorithms
             data = data[:, :, np.newaxis]
 
-        data_downsampled = data[::self._downsample_factor, ::self._downsample_factor, :]
-        data_dithered = self._ditherer(data_downsampled)
+        data_downsampled = data[::self.downsample_factor, ::self.downsample_factor, :]
+        data_dithered = self.ditherer(data_downsampled)
 
-        data_avg = np.average(data_dithered[:, :, :3], axis=2, weights=np.asarray(self._channel_weights))
-        pix_arr = np.where(data_avg >= self._threshold, 0, 1)
+        data_avg = np.average(data_dithered[:, :, :3], axis=2, weights=np.asarray(self.channel_weights))
+        pix_arr = np.where(data_avg >= self.threshold, 0, 1)
 
-        if self._show_img:
+        if self.show_img:
             plt.imshow(pix_arr, cmap='Greys')
             plt.show()
 
-        self._obj_cache.extend(Pixels(pix_arr, self._obj).build_objs())
+        self._obj_cache.extend(Pixels(pix_arr, self.obj).get_objs())
 
         self._is_already_built = True
         return self._obj_cache

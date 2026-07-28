@@ -44,24 +44,28 @@ class CustomObject:
     def __init__(self):
         super().__init__()
         self._id: int = -1
-        self._obj_cache: list[Object | 'CustomObject'] = list()
+        self._obj_cache: list[Object | 'CustomObject'] = []
 
     def __repr__(self):
         return self._to_str()
 
     def __len__(self):
-        return len(self.build_objs())
+        return len(self.get_objs())
 
-    def build_objs(self):
+    def get_objs(self):
+        if self._obj_cache:
+            return self._obj_cache
+        return self._build_objs()
+
+    def _build_objs(self):
         """
         Creates the Objects that will be added to the Level.
         This method must be overridden in all child classes with the following basic structure:\n
-            super().build_objs()\n
+            super()._build_objs()\n
             # Implementation / Object definition; each Object should be added to self._obj_cache\n
             return self._obj_cache\n
         """
-        self._obj_cache.clear()
-        return list()
+        return self._obj_cache
 
     def _update_ids(self):
         if self._id == -1:
@@ -79,11 +83,11 @@ class CustomObject:
         return self._id
 
     def _to_str(self, enumeration: bool = False) -> str:
-        self.build_objs()
+        objs = self.get_objs()
         self._update_ids()
 
         text = []
-        for obj in self._obj_cache:
+        for obj in objs:
             text.append(obj._to_str(enumeration=enumeration))
 
         return '\n'.join(text)

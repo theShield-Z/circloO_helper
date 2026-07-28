@@ -35,36 +35,30 @@ class CHVideo(CustomObject):
         :param show_img:            If True, displays the video as it processes; default is True
         """
         super().__init__()
-        self._filepath = filepath
+        self.filepath = filepath
 
-        self._obj = obj
+        self.obj = obj
 
-        self._resolution = resolution
-        self._fps = fps
+        self.resolution = resolution
+        self.fps = fps
 
-        self._threshold = threshold
-        self._channel_weights = channel_weights
-        self._show_img = show_img
+        self.threshold = threshold
+        self.channel_weights = channel_weights
+        self.show_img = show_img
 
-        self._ditherer = ditherer
+        self.ditherer = ditherer
 
-        self._is_already_built = False
-
-    def build_objs(self):
-        if self._is_already_built:
-            return self._obj_cache
-
-        super().build_objs()
+    def _build_objs(self):
+        super()._build_objs()
 
         processed_frames, frame_duration = self._process_video()
 
         # Convert to Objects
-        obj = copy(self._obj)
+        obj = copy(self.obj)
         obj.disappear_after = frame_duration
         obj.init_delay = frame_duration
-        self._obj_cache.extend(Pixels(processed_frames, obj).build_objs())
+        self._obj_cache.extend(Pixels(processed_frames, obj).get_objs())
 
-        self._is_already_built = True
         return self._obj_cache
 
     def _process_video(self):
@@ -74,24 +68,24 @@ class CHVideo(CustomObject):
         """
 
         try:
-            metadata = iio.immeta(self._filepath)
+            metadata = iio.immeta(self.filepath)
         except Exception as e:
-            raise ValueError(f"Can not read video at {self._filepath}")
+            raise ValueError(f"Can not read video at {self.filepath}")
 
         source_fps = float(metadata['fps'])
 
         # Count source frames.
         total_source_frames = 0
-        for _ in iio.imiter(self._filepath):
+        for _ in iio.imiter(self.filepath):
             total_source_frames += 1
 
         source_duration = total_source_frames / source_fps      # in seconds
 
-        total_target_frames = int(source_duration * self._fps)
+        total_target_frames = int(source_duration * self.fps)
         frame_duration = source_duration / total_target_frames  # in seconds
 
         # Set up video display
-        if self._show_img:
+        if self.show_img:
             import matplotlib.pyplot as plt
 
             preview_im = None
@@ -102,10 +96,10 @@ class CHVideo(CustomObject):
 
         processed_frames = []
 
-        frame_step = source_fps / self._fps
+        frame_step = source_fps / self.fps
         next_source_frame = 0
 
-        for source_frame_idx, frame_rgb in enumerate(iio.imiter(self._filepath)):
+        for source_frame_idx, frame_rgb in enumerate(iio.imiter(self.filepath)):
 
             # Skip frames to achieve desired fps.
             if source_frame_idx < int(next_source_frame):
@@ -115,15 +109,15 @@ class CHVideo(CustomObject):
             # Processing.
             frame_resized = np.asarray(
                 Image.fromarray(frame_rgb).resize(
-                    self._resolution,
+                    self.resolution,
                     Image.Resampling.BILINEAR
                 )
             )
 
             data = frame_resized.astype(np.float32) / 255
-            data_dithered = self._ditherer(data)
-            data_avg = np.average(data_dithered[:, :, :3], axis=2, weights=np.asarray(self._channel_weights))
-            pix_arr = np.where(data_avg >= self._threshold, 0, 1)
+            data_dithered = self.ditherer(data)
+            data_avg = np.average(data_dithered[:, :, :3], axis=2, weights=np.asarray(self.channel_weights))
+            pix_arr = np.where(data_avg >= self.threshold, 0, 1)
 
             processed_frames.append(pix_arr)
 
@@ -131,7 +125,7 @@ class CHVideo(CustomObject):
                 break
 
             # Display video as it processes.
-            if self._show_img:
+            if self.show_img:
                 img = (1 - pix_arr).astype(np.uint8) * 255
 
                 if preview_im is None:
@@ -148,7 +142,7 @@ class CHVideo(CustomObject):
                 fig.canvas.flush_events()
                 plt.pause(0.001)
 
-        if self._show_img:
+        if self.show_img:
             plt.close(fig)
 
         return processed_frames, frame_duration

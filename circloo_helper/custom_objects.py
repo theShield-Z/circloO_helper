@@ -36,8 +36,8 @@ class OutlineRectangle(_CustomObject, _ot.Solid, _os.Rectangle, _os.Line):
         self.thickness = thickness
         self.coords_by_center = coords_by_center
 
-    def build_objs(self):
-        super().build_objs()
+    def _build_objs(self):
+        super()._build_objs()
         obj_cache = list()
 
         if self.coords_by_center:
@@ -114,8 +114,8 @@ class MoveableArc(_CustomObject, _ot.Moveable, _os.Line):
         theta = _math.radians(theta)
         return 2 * r * _math.sin(theta / 2)
 
-    def build_objs(self):
-        super().build_objs()
+    def _build_objs(self):
+        super()._build_objs()
 
         rects = []
 
@@ -165,8 +165,8 @@ class Polygon(_CustomObject, _ot.Solid, _os.Other):
         super().__init__()
         self.points = points
 
-    def build_objs(self):
-        super().build_objs()
+    def _build_objs(self):
+        super()._build_objs()
 
         triangles = _tripy.earclip(self.points)
         for triangle in triangles:

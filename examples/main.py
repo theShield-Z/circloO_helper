@@ -42,8 +42,8 @@ class House(ch.CustomObject, ch.object_types.Solid, ch.object_shapes.Other):
         self.x = x
         self.y = y
 
-    def build_objs(self):
-        super().build_objs()
+    def _build_objs(self):
+        super()._build_objs()
 
         width = height = 50
         self._obj_cache.append(SolidRectangle(self.x, self.y, width, height))
