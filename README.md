@@ -195,7 +195,7 @@ Object types represent the physics type of an object. Types include:
 
 Custom Objects are objects that are not natively in circloO, but can be created by composing multiple basic objects together. 
 All Custom Objects inherit from the `CustomObject` base class, and they can be added to Levels just like regular Objects using `Level.add()`.
-Attributes of a `CustomObject` can **not** be updated after it has been added to a Level with `Level.add()`.
+Attributes of a `CustomObject` can **not** be updated after it has been added to a Level with `Level.add()`, after calling `len(CustomObject)`, or after calling the `get_objs()` method.
 
 circloO Helper contains a few Custom Objects:
 - `OutlineRectangle`
@@ -205,7 +205,7 @@ circloO Helper contains a few Custom Objects:
 - `Polygon`
   - A Solid polygon, comprising SolidTriangles.
 
-If you need more control over the base objects that a Custom Object comprises, you can store them in a new list variable by calling the `get_objs()` method, alter them as needed, and add the contents of that list to the Level. For example, if you want to connect all four sides of an OutlineRectangle to a MoveableCircle with a Rope:
+If you need more control over the base objects that a Custom Object comprises, you can store them in a new list variable by calling the `get_objs()` method, alter them as needed, and add the contents of that list to the Level. For example, if you want to connect all four sides of an `OutlineRectangle` to a `MoveableCircle` with a Rope:
 
 ```python
 lvl = ch.Level()
@@ -282,6 +282,8 @@ circloO Helper contains a few tools to help with repeated tasks, each a function
 
 All tools that take an Object will return a copy of the Object (the original Object will not be altered)
 
+Tools currently do not support Custom Objects.
+
 
 ## Pixel Builder
 
@@ -338,7 +340,9 @@ vid = ch.CHVideo("Dancing Rick Astley Loop.mp4",
                  5)
 ```
 
-It's recommended to set the `density` of the object to 0 (so that the video does not fall apart) and `no_fade` to True (so that each frame appears instantly). Like `CHImage`, there are also parameters to change the thresholding, RGB channel weights, and the dithering algorithm (see [Dithering](#dithering))
+It's recommended to set the `density` of the object to 0 (so that the video does not fall apart) and `no_fade` to True (so that each frame appears instantly). `wait_between` and `duration` will be overridden during conversion, regardless of their initial values.
+
+Like `CHImage`, there are also parameters to change the thresholding, RGB channel weights, and the dithering algorithm (see [Dithering](#dithering))
 
 
 ## Dithering
@@ -567,6 +571,7 @@ The sections above are intended as a conceptual overview of the most important f
   - Attributes:
     - `disappear_after (float)` - The time for which the object exists before disappearing; default is 5
     - `wait_between (float)` - The time between the object disappearing and a new object generating; default is 1
+      - Set to 9999 to make the object only generate once
     - `init_delay (float)` - The initial time that the generator waits before turning on; default is 0
       - `wait_between` is also added to this time
     - `no_fade (bool)` - If True, disables the fading animation when an object appears or disappears; default is False
@@ -1067,6 +1072,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
   - `obj (Object)` - Object to be tiled into video
     - Must be of Type `Generator`
     - The coordinates of this Object will be used as the top-left corner of the video.
+    - The `wait_between` and `duration` attributes will be overridden during conversion, regardless of their initial values.
   - `resolution (tuple[int])` - Output resolution of the video in pixels as (width, height)
   - `fps (float)` - Output displayed frames per second of video
   - `threshold (float)` - Threshold for binarization; default is 0.5
@@ -1168,6 +1174,7 @@ Ordered dithering patterns:
   - Re-implement image plotter from before the refactor.
 - `text.Text`
   - Implement more sophisticated tabulation with `'\n'` - instead of always jumping a fixed width, it each tab should line up with the tabs on other lines.
+  - Add support for external fonts and an internal vector font.
 - `svg_converter.CHSVG`
   - More complex SVGs, such as those made with advanced Inkscape tools, seem to have incorrect path offsets. More testing needs to be done to see how to fix this.
   - Implement filled paths using the `Polygon` Custom Object.
