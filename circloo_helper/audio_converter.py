@@ -12,15 +12,18 @@ _DRUM_MAP = {35: ('drum', 1, 1, 1),     # Acoustic Bass Drum
              36: ('drum', 5, 1, 1),     # Bass Drum 1
              38: ('drum', 0, 1, 1),     # Acoustic Snare
              40: ('drum', 2, 1, 1),     # Electric Snare
+             37: ('house', 21, 1.5, 1), # Side-Stick
              42: ('house', 10, 2, 1),   # Closed Hi-Hat
              44: ('house', 18, 2, 2),   # Pedal Hi-Hat
              46: ('drum', 9, 1, 1),     # Open Hi-Hat
              49: ('drum', 3, 1, 1),     # Crash 1
              51: ('house', 18, 1, 1),   # Ride 1
-             45: ('drum', 7, .8, 1),    # Low Tom
-             47: ('drum', 7, .9, 1),    # Low-Mid Tom
-             48: ('drum', 7, 1.1, 1),   # Hi-Mid Tom
-             50: ('drum', 7, 1.3, 1),   # High Tom
+             55: ('drum', 3, 1.5, 1),   # Splash
+             41: ('drum', 8, .6, 1),    # Low Floor Tom
+             45: ('drum', 8, .8, 1),    # Low Tom
+             47: ('drum', 8, .9, 1),    # Low-Mid Tom
+             48: ('drum', 8, 1.1, 1),   # Hi-Mid Tom
+             50: ('drum', 8, 1.3, 1),   # High Tom
              39: ('drum', 4, 1, 1),     # Hand Clap
              54: ('drum', 3, 3, 1),     # Tambourine
              56: ('house', 21, 1, 1),   # Cowbell
