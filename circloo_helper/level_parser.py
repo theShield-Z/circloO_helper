@@ -96,6 +96,9 @@ def parse(level_text: str) -> Level:
                         case 'GLUE':
                             cur_obj = Glue(None, None)
                             connections = list(map(int, split_line[2: 4]))
+                        case _:
+                            # print(f"No match for line: {line}")
+                            pass
 
                 # LEVEL MODIFIERS.
 
@@ -158,13 +161,26 @@ def parse(level_text: str) -> Level:
                 case 'mc':
                     cur_obj = MoveableCircle(*map(float, split_line[1:6]))
 
+                case 'mcG':
+                    x, y, _, radius, density, damping = split_line[1:7]
+                    cur_obj = MoveableCircle(float(x), float(y), float(radius), float(density), float(damping))
+
                 case 'mb':
                     x, y, width, height, density, _, rotation, damping = split_line[1:9]
                     cur_obj = MoveableRectangle(float(x), float(y), float(width) * 2, float(height) * 2,
                                                 float(density), float(damping), float(rotation),
                                                 coords_by_center=True)
 
+                case 'mbG':
+                    x, y, _, width, height, density, _, rotation, damping = split_line[1:10]
+                    cur_obj = MoveableRectangle(float(x), float(y), float(width) * 2, float(height) * 2,
+                                                float(density), float(damping), float(rotation),
+                                                coords_by_center=True)
+
                 case 'mt':
+                    cur_obj = MoveableTriangle(*map(float, split_line[1:8]))
+
+                case 'mtG':
                     cur_obj = MoveableTriangle(*map(float, split_line[1:8]))
 
                 case 'rr':
@@ -260,6 +276,9 @@ def parse(level_text: str) -> Level:
                         case "'ispo'":
                             x, y, appear = split_line[2:5]
                             cur_obj = SpecialCollectable(float(x), float(y), int(appear), collect_from_object=True)
+                        case _:
+                            # print(f"No match for line: {line}")
+                            pass
 
                 # CONNECTIONS.
 
@@ -355,6 +374,10 @@ def parse(level_text: str) -> Level:
                             _add_connections(lvl, cur_obj, connections)
                     connections.clear()
                     cur_obj = None
+
+                case _:
+                    # print(f"No match for line: {line}")
+                    pass
 
         except Exception as e:
             warn(f"One or more objects could not be parsed: {e}")
