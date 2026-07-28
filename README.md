@@ -1039,6 +1039,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
   - `text (str)` - String of text to be converted
   - `obj (Object)` - Object to be tiled to create each letter
   - `spacing (float)` - Space between each letter as a scaler to the width of `obj`; default is 1
+  - `line_spacing (float)` - Space between each line as a scaler to the height of `obj`; default is 2
 
 
 ### Plotter

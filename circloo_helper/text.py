@@ -447,17 +447,20 @@ class Text(CustomObject):
     def __init__(self,
                  text: str,
                  obj: Object,
-                 spacing: float | int = 1):
+                 spacing: float | int = 1,
+                 line_spacing: float | int = 2):
         """
         Convert a text string into circloO Objects. Allows use of \n, \r, and \t.
         :param text:    str to be converted.
         :param obj:     Object to be tiled into char shapes. Top-left corner of text starts at this object's centroid
         :param spacing: Space between each letter as a scaler to obj's width; default is 1.
+        :param line_spacing:    Space between each letter as a scaler to obj's height; default is 2.
         """
         super().__init__()
         self.text = text
         self.obj = obj
         self.spacing = spacing
+        self.line_spacing = line_spacing
 
     def _build_objs(self):
         super()._build_objs()
@@ -469,7 +472,7 @@ class Text(CustomObject):
         for char in self.text:
             if char == '\n':
                 # New line.
-                obj = translate(obj, 0, height * 6)
+                obj = translate(obj, 0, height * (5 + self.line_spacing))
                 obj = translate(obj, centroid(self.obj)[0] - centroid(obj)[0])
                 prev_width = 0
                 continue
