@@ -2,10 +2,13 @@ import math as _math
 import tripy as _tripy
 
 from .object import CustomObject as _CustomObject
-from .tools import pivot as _pivot
 import circloo_helper.circloo_objects as _o
 import circloo_helper.object_types as _ot
 import circloo_helper.object_shapes as _os
+from .tools import (
+    pivot as _pivot,
+    polar as _polar
+)
 
 
 class OutlineRectangle(_CustomObject, _ot.Solid, _os.Rectangle, _os.Line):
@@ -172,5 +175,67 @@ class Polygon(_CustomObject, _ot.Solid, _os.Other):
         for triangle in triangles:
             (x1, y1), (x2, y2), (x3, y3) = triangle
             self._obj_cache.append(_o.SolidTriangle(x1, y1, x2, y2, x3, y3))
+
+        return self._obj_cache
+
+
+class Star(_CustomObject, _ot.Solid, _os.Other):
+    def __init__(self,
+                 x_pos,
+                 y_pos,
+                 outer_radius: int | float,
+                 inner_radius: int | float | None = None,
+                 n_points: int = 5,
+                 rotation: int | float = -90):
+        """
+        Solid n-pointed star.
+        :param x_pos:           X-position of center of Star
+        :param y_pos:           Y-position of center of Star
+        :param outer_radius:    Radius of outer set of points of Star
+        :param inner_radius:    Radius of inner set of points of Star; if None, this radius will be set
+                                    automatically to form a regular star; default is None
+        :param n_points:        Number of points on the Star; default is 5
+        :param rotation:        Rotation in degrees of Star; 0 points the star to the right; default is -90 (upright)
+        """
+        super().__init__()
+        self.x = x_pos
+        self.y = y_pos
+        self.outer_radius = outer_radius
+        self.rotation = rotation
+
+        if n_points > 0:
+            self.n_points = n_points
+        else:
+            raise ValueError("n_points of a Star must be positive and nonzero.")
+
+        if inner_radius is None:
+            pi = _math.pi
+            cos = _math.cos
+            n = self.n_points
+            self.inner_radius = outer_radius * cos(2 * pi / n) / cos(pi / n)
+        else:
+            self.inner_radius = inner_radius
+
+    def _build_objs(self):
+        super()._build_objs()
+
+        points = []
+
+        step = 360 / (self.n_points * 2)
+        angles = []
+        t = 0
+        while t < 360:
+            angles.append(t + self.rotation)
+            t += step
+
+        for i, angle in enumerate(angles):
+            if i % 2 == 0:
+                # outer point
+                points.append(_polar(self.outer_radius, angle, self.x, self.y))
+            else:
+                # inner point
+                points.append(_polar(self.inner_radius, angle, self.x, self.y))
+
+        self._obj_cache.extend(Polygon(*points).get_objs())
 
         return self._obj_cache

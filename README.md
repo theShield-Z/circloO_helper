@@ -204,6 +204,8 @@ circloO Helper contains a few Custom Objects:
   - An Arc that can move, comprising many small MoveableRectangles.
 - `Polygon`
   - A Solid polygon, comprising SolidTriangles.
+- `Star`
+  - A Solid n-pointed star, comprising SolidTriangles.
 
 If you need more control over the base objects that a Custom Object comprises, you can store them in a new list variable by calling the `get_objs()` method, alter them as needed, and add the contents of that list to the Level. For example, if you want to connect all four sides of an `OutlineRectangle` to a `MoveableCircle` with a Rope:
 
@@ -934,6 +936,8 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
   - Shape: `Line`
   - A movable arc of a circle, where the outline is centered on the radius
   - Additional attributes:
+    - `x (float)` - X-position of arc's center
+    - `y (float)` - Y-position of arc's center
     - `radius (float)` - Radius of the arc
     - `start_angle (float)` - Starting angle of the outline in degrees; default is 0 (right)
     - `end_angle (float)` - Ending angle of the outline in degrees; default is 360 (creates a full circle with `start_angle`'s default value)
@@ -945,6 +949,19 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
   - A simple polygon built using ear-clipping from the tripy library
   - Additional attributes:
     - `*points (tuple[float])` - Any number of (x, y) points
+- `Star`
+  - Type: `Solid`
+  - Shape: `Other`
+  - An n-pointed star built using the `Polygon` Custom Object
+  - Additional attributes:
+    - `x (float)` - X-position of star's center
+    - `y (float)` - Y-position of star's center
+    - `outer_radius (float)` - Radius of outermost points of the star
+    - `inner_radius (float)` - Radius of innermost points of the star; default is None
+      - If None, `inner_radius` will be calculated automatically to form a regular star.
+    - `n_points (int)` - Number of points on the star; default is 5
+    - `rotation (float)` - Rotation in degrees of the star; default is -90 (upright)
+      - 0 points the star to the left, and increasing rotates clockwise.
 
 
 ## Tools
@@ -1089,8 +1106,8 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
 - Converts a vector/svg image into circloO objects.
 - Attributes:
   - `filepath (str)` - Path to input image
-  - `x_pos (float)` - X-coordinate of top-left corner; default is 1500 (center)
-  - `y_pos (float)` - Y-coordinate of top-left corner; default is 1500 (center)
+  - `x (float)` - X-coordinate of top-left corner; default is 1500 (center)
+  - `y (float)` - Y-coordinate of top-left corner; default is 1500 (center)
   - `scale (float)` - Scale of image; default is 1 (no scaling)
   - `line_thickness (float)` - Thickness of each line; default is 3
 
