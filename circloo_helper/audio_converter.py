@@ -211,7 +211,7 @@ class CHMIDI(CustomObject):
             if self.labels:
                 # Label each track.
                 label = Text(track.name, SolidRectangle(x + len(cbls) * 50, y - 10, 5, 5))
-                self._obj_cache.extend(label.build_objs())
+                self._obj_cache.extend(label.get_objs())
 
             y += 50
 
