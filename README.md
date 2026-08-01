@@ -1,3 +1,35 @@
+# [circloO Helper](https://github.com/theShield-Z/circloO_helper)
+
+circloO Helper is a Python library for creating and editing levels for the physics platformer game [*circloO*](https://store.steampowered.com/app/2195630/circloO/). It supports procedural level generation, level parsing, custom composite objects, and conversion from text, image, videos, SVGs, and MIDI files.
+
+
+## Main Features
+
+- Creation and editing of levels and objects
+- Full documentation of level and object attributes
+- Video, Image (both raster & vector), and Text conversion
+- Custom objects (this is a really cool one)
+- Several miscellaneous tools
+
+## Why use it?
+
+```python
+import circloo_helper as ch
+from circloo_helper.circloo_objects import *
+
+from random import randint
+
+lvl = ch.Level(segments=1)
+
+lvl.add(Arc(1500, 1500, 0, 360, 100))
+for i in range(50):
+    lvl.add(Line(*ch.polar(100, randint(0, 360)), *ch.polar(100, randint(0, 360)), 1))
+
+lvl.to_file("my_circloO_level.txt")
+```
+
+<hr>
+
 ## Contents
 - Basics
   - [Setup](#setup)
@@ -48,20 +80,6 @@
 - [To-Do & Known Issues](#to-do--known-issues)
 
 <hr>
-
-
-# [circloO Helper](https://github.com/theShield-Z/circloO_helper)
-
-circloO Helper is a Python library for creating and editing levels for the physics platformer game [*circloO*](https://store.steampowered.com/app/2195630/circloO/). It supports procedural level generation, level parsing, custom composite objects, and conversion from text, image, videos, SVGs, and MIDI files.
-
-
-## Main Features
-
-- Creation and editing of levels and objects
-- Full documentation of level and object attributes
-- Video, Image (both raster & vector), and Text conversion
-- Custom objects (this is a really cool one)
-- Several miscellaneous tools
 
 
 ## Setup
