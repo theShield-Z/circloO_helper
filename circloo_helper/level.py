@@ -102,6 +102,14 @@ class Level:
 
         # Append each object in objs to level
         for obj in self._objs:
+            # Check if connections have been added to the level.
+            if obj1 := getattr(obj, "obj1", False):
+                if obj1.get_id() == -1:
+                    raise ValueError(f"Object {obj.get_id()} ({type(obj).__name__}) is connected to an object that has not been added to the level.")
+            if obj2 := getattr(obj, "obj2", False):
+                if obj2.get_id() == -1:
+                    raise ValueError(f"Object {obj.get_id()} ({type(obj).__name__}) is connected to an object that has not been added to the level.")
+
             text.append(obj._to_str(enumeration=True))
 
         return '\n'.join(text)
