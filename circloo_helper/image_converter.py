@@ -1,7 +1,6 @@
 from typing import Callable
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
 
 from .pixel_builder import Pixels
 from .object import Object, CustomObject
@@ -56,6 +55,7 @@ class CHImage(CustomObject):
         pix_arr = np.where(data_avg >= self.threshold, 0, 1)
 
         if self.show_img:
+            import matplotlib.pyplot as plt
             plt.imshow(pix_arr, cmap='Greys')
             plt.show()
 
