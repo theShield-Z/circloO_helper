@@ -386,11 +386,17 @@ def parse(level_text: str) -> Level:
 
 
 def read_clipboard() -> Level:
+    """
+    Read level text contents from clipboard.
+    """
     lvl = parse(paste())
     return lvl
 
 
 def read_file(path: str) -> Level:
+    """
+    Read level text contents from a file.
+    """
     with open(path, 'r') as f:
         lvl = parse(f.read())
     return lvl

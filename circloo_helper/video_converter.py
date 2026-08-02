@@ -1,14 +1,13 @@
 from copy import copy
 from typing import Callable
-
-import numpy as np
-import imageio.v3 as iio
-from PIL import Image
+import importlib.util
 
 from .object import CustomObject
 from .object_types import Generator
 from .dithering import LINE_DITHER_8X8, ordered_dither
 from .pixel_builder import Pixels
+
+_default_show_img = importlib.util.find_spec('matplotlib') is not None
 
 
 class CHVideo(CustomObject):
@@ -21,8 +20,8 @@ class CHVideo(CustomObject):
                  fps: int | float,
                  threshold: int | float = .5,
                  channel_weights: tuple[int | float, int | float, int | float] = (1, 1, 1),
-                 ditherer: Callable[[np.array], np.array] = lambda x: ordered_dither(x, LINE_DITHER_8X8),
-                 show_img: bool = True):
+                 ditherer: Callable[['np.array'], 'np.array'] = lambda x: ordered_dither(x, LINE_DITHER_8X8),
+                 show_img: bool | None = None):
         """
         Converts a video into circloO objects via dithering & grayscale conversion.
         :param filepath:            Path to input image
@@ -32,7 +31,7 @@ class CHVideo(CustomObject):
         :param threshold:           Threshold for grayscale conversion; default is 0.5
         :param channel_weights:     Weights for RGB channels; default is (1, 1, 1)
         :param ditherer:            Dithering function (found in `dithering` module); default is ordered with a line pattern
-        :param show_img:            If True, displays the video as it processes; default is True
+        :param show_img:            If True, displays the processed image; if None, default value is True when matplotlib is installed and False otherwise; default is None
         """
         super().__init__()
         self.filepath = filepath
@@ -44,9 +43,9 @@ class CHVideo(CustomObject):
 
         self.threshold = threshold
         self.channel_weights = channel_weights
-        self.show_img = show_img
-
         self.ditherer = ditherer
+
+        self.show_img = show_img if show_img is not None else _default_show_img
 
     def _build_objs(self):
         super()._build_objs()
@@ -68,9 +67,16 @@ class CHVideo(CustomObject):
         """
 
         try:
+            import numpy as np
+            import imageio.v3 as iio
+            from PIL import Image
+        except ImportError as e:
+            raise ImportError("Install 'video' extras: numpy, imageio, imageio-ffmpeg, pillow") from e
+
+        try:
             metadata = iio.immeta(self.filepath)
         except Exception as e:
-            raise ValueError(f"Can not read video at {self.filepath}")
+            raise ValueError(f"Can not read video at {self.filepath}") from e
 
         source_fps = float(metadata['fps'])
 
@@ -86,13 +92,16 @@ class CHVideo(CustomObject):
 
         # Set up video display
         if self.show_img:
-            import matplotlib.pyplot as plt
+            try:
+                import matplotlib.pyplot as plt
 
-            preview_im = None
-            plt.ion()
-            fig, ax = plt.subplots()
-            ax.axis('off')
-            fig.canvas.manager.set_window_title('Processing video...')
+                preview_im = None
+                plt.ion()
+                fig, ax = plt.subplots()
+                ax.axis('off')
+                fig.canvas.manager.set_window_title('Processing video...')
+            except ImportError as e:
+                raise ImportError("Set show_img to False or install 'show_img' extras: matplotlib") from e
 
         processed_frames = []
 

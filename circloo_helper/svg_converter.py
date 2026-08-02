@@ -4,7 +4,6 @@ TODO: implement filled paths using the Polygon custom object
 TODO: also convert embedded images using CHImage
 """
 
-from svgpathtools import svg2paths2, parse_path, path
 import cmath
 import math
 from warnings import warn
@@ -34,6 +33,11 @@ class CHSVG(CustomObject):
 
     def _build_objs(self):
         super()._build_objs()
+
+        try:
+            from svgpathtools import svg2paths2, parse_path, path
+        except ImportError as e:
+            raise ImportError("Install 'svg' extras: svgpathtools-light") from e
 
         def offset_pos(pos: tuple, offset_x=self.x, offset_y=self.y):
             return pos[0] + offset_x / self.scale, pos[1] + offset_y / self.scale

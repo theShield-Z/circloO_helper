@@ -1,6 +1,6 @@
 from random import randint as _randint
 import time
-import pyperclip
+from pyperclip import copy
 
 from .object import Object, CustomObject
 
@@ -139,7 +139,7 @@ class Level:
         Also returns the level text, so you can do print(Level().to_clipboard) to simplify workflows.
         """
         txt = str(self)
-        pyperclip.copy(txt)
+        copy(txt)
         return txt
 
     def to_file(self, path: str):

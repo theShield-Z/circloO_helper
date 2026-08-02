@@ -8,7 +8,7 @@ circloO Helper is a Python library for creating and editing levels for the physi
 - Creation and editing of levels and objects
 - Full documentation of level and object attributes
 - Video, Image (both raster & vector), and Text conversion
-- Custom objects (this is a really cool one)
+- Custom Objects
 - Several miscellaneous tools
 
 ## Why use it?
@@ -87,27 +87,42 @@ lvl.to_file("my_circloO_level.txt")
 This library was built and tested with Python 3.13 on Windows 10, but most features should still work with any modern Python version and OS.
 
 Install with pip:
-```commandline
+```terminal
 pip install circloo-helper
 ```
 
+Not all features are installed by default. To install each, refer below:
+```terminal
+pip install circloo-helper[all]       # Installs all features
+
+pip install circloo-helper[image]     # Image conversion
+pip install circloo-helper[video]     # Video conversion
+pip install circloo-helper[show_img]  # show_img parameter in CHImage & CHVideo
+pip install circloo-helper[svg]       # SVG conversion
+pip install circloo-helper[audio]     # MIDI conversion
+```
+
 You can alternatively download the source from [GitHub](https://github.com/theShield-Z/circloO_helper), navigate to the directory that contains `setup.py`, and run:
-```commandline
+```terminal
 pip install .
+pip install -r requirements.txt     # install dependencies
 ```
 
 See the examples contained in [`examples/main.py`](https://github.com/theShield-Z/circloO_helper/tree/main/examples) for basic usage of most features.
 
 ### Dependencies
 
-- numpy
-- Pillow (image conversion)
-- imageio & imageio-ffmpeg (video conversion)
-- svgpathtools-light (svg conversion)
-- mido (midi conversion)
-- pyperclip (reading/writing levels to clipboard)
-- numba (rectangle reduction algorithm speed)
-- tripy (polygon triangulation)
+- Core
+  - numpy
+  - numba (rectangle reduction algorithm speed)
+  - pyperclip (reading/writing levels to clipboard)
+  - tripy (polygon triangulation)
+- Optional
+  - pillow (image & video conversion)
+  - imageio & imageio-ffmpeg (video conversion)
+  - matplotlib (displaying image & video conversion)
+  - svgpathtools-light (svg conversion)
+  - mido (midi conversion)
 
 All dependencies are installed automatically via pip.
 
@@ -338,6 +353,9 @@ txt = ch.Text("Hello, world!", SolidRectangle(1500, 1500, 10, 10))
 
 See [Image Conversion (vector)](#image-conversion-vector) for converting SVG images.
 
+- Requires `pip install circloo-helper[image]`.
+- Optionally requires `pip install circloo-helper[show_img]` for displaying the converted image with `show_img=True`.
+
 You can easily add images (any common format) to a Level using the `CHImage` class. The class takes an input filepath, an Object, and a downsample factor, then dithers and thresholds the image into a 2D binary array that is built with `Pixels`.
 
 ```python
@@ -350,6 +368,9 @@ img = ch.CHImage("mona_lisa.webp",
 
 
 ## Video Conversion
+
+- Requires `pip install circloo-helper[video]`.
+- Optionally requires `pip install circloo-helper[show_img]` for displaying the converted video with `show_img=True`.
 
 You can easily add videos (any common format) to a Level using the `CHVideo` class. The class takes an input filepath, an Generator type Object, an output resolution, and an output fps, then dithers and thresholds each frame of the video into a 2D binary array that is built with `Pixels`.
 
@@ -388,6 +409,8 @@ Note that, since `ordered_dither()` takes multiple arguments, a lambda expressio
 
 See [Image Conversion (raster)](#image-conversion-raster) for converting raster images.
 
+- Requires `pip install circloo-helper[svg]`.
+
 You can also easily add SVG vector images to a Level using the `CHSVG` class. The class takes an input filepath and optional parameters for the image coordinates (from the top-left corner), scale, and thickness of each line.
 
 ```python
@@ -396,6 +419,8 @@ svg = CHSVG("examples/mysvg.svg")
 
 
 ## Audio (MIDI) Conversion
+
+- Requires `pip install circloo-helper[audio]`.
 
 Audio conversion is also fairly simple using the `CHMIDI` class. The class takes an input filepath for a MIDI file and optional parameters, including sound customization and sustained note handling.
 
@@ -1215,5 +1240,7 @@ Ordered dithering patterns:
   - More complex SVGs, such as those made with advanced Inkscape tools, seem to have incorrect path offsets. More testing needs to be done to see how to fix this.
   - Implement filled paths using the `Polygon` Custom Object.
   - Also convert embedded raster images with `CHImage`.
+- Optional Dependencies
+  - Make numpy and numba optional installs; they are both huge libraries and are only used for `Pixels` and its compositions.
 
-Each item in this list can be found in their respective modules within comments prefixed by `TODO`.
+Where relevant, each item in this list can be found in their respective modules within comments prefixed by `TODO`.

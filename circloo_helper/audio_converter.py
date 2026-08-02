@@ -1,5 +1,3 @@
-from mido import MidiFile, tick2second
-
 from .object import CustomObject
 from .circloo_objects import Collectable, InputTrigger, SpecialCollectable, CircleGenerator, SpecialConnection, SolidRectangle
 from .text import Text
@@ -76,6 +74,12 @@ class CHMIDI(CustomObject):
 
     def _build_objs(self):
         super()._build_objs()
+
+        try:
+            from mido import MidiFile, tick2second
+        except ImportError as e:
+            raise ImportError("Install 'audio' extras: mido") from e
+
         midi = MidiFile(self.filepath)
 
         ticks_per_beat = midi.ticks_per_beat
