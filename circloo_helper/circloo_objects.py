@@ -1086,7 +1086,8 @@ class SpecialConnection(_os.Connection):
         :param action:      action to perform on target object
         :param args:        other arguments required for SetSpeed & Impulse
         """
-        if not isinstance(collectable, SpecialCollectable) and collectable is not None:
+        if (not (isinstance(collectable, SpecialCollectable) or isinstance(collectable, InputTrigger))
+                and collectable is not None):
             _warn(f"You are trying to connect a SpecialConnection to a non-SpecialCollectable object. This is not recommended but still technically possible.")
 
         super().__init__()
