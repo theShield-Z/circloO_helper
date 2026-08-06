@@ -47,7 +47,7 @@ class CustomObject:
         self._obj_cache: list[Object | 'CustomObject'] = []
 
     def __repr__(self):
-        return self._to_str()
+        return self._to_str(enumeration=True)
 
     def __len__(self):
         return len(self.get_objs())
@@ -82,12 +82,20 @@ class CustomObject:
     def get_id(self):
         return self._id
 
-    def _to_str(self, enumeration: bool = False) -> str:
+    def _to_str(self, enumeration: bool = False, _from_lvl: bool = False) -> str:
         objs = self.get_objs()
         self._update_ids()
 
         text = []
         for obj in objs:
+            if _from_lvl:
+                if obj1 := getattr(obj, "obj1", False):
+                    if obj1.get_id() == -1:
+                        raise ValueError(f"Object {obj.get_id()} ({type(obj).__name__}) is connected to an object that has not been added to the level.")
+                if obj2 := getattr(obj, "obj2", False):
+                    if obj2.get_id() == -1:
+                        raise ValueError(f"Object {obj.get_id()} ({type(obj).__name__}) is connected to an object that has not been added to the level.")
+
             text.append(obj._to_str(enumeration=enumeration))
 
         return '\n'.join(text)

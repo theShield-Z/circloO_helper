@@ -110,7 +110,10 @@ class Level:
                 if obj2.get_id() == -1:
                     raise ValueError(f"Object {obj.get_id()} ({type(obj).__name__}) is connected to an object that has not been added to the level.")
 
-            text.append(obj._to_str(enumeration=True))
+            if isinstance(obj, CustomObject):
+                text.append(obj._to_str(enumeration=True, _from_lvl=True))
+            else:
+                text.append(obj._to_str(enumeration=True))
 
         return '\n'.join(text)
 
