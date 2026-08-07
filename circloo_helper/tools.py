@@ -2,11 +2,35 @@ import math
 import subprocess
 from copy import copy
 
-from .object import Object
+from .object import Object, CustomObject
 import circloo_helper.object_shapes as _os
 from .circloo_objects import Line, Arc, Curve, Dummy, Portal
 
 __all__ = ["polar", "pivot", "translate", "scale", "dimensions", "centroid", "push_to_android", "combine"]
+
+
+class _TransformObject(CustomObject):
+    """
+    A simple wrapper of a CustomObject's object cache (returned from get_objs()) to provide CustomObject functionality to the list.
+    Created when using transformation tools on a CustomObject.
+    """
+    def __init__(self, objs: list = None):
+        super().__init__()
+        self.objs = objs if objs is not None else []
+
+    def _build_objs(self):
+        super()._build_objs()
+        self._obj_cache = self.objs
+        return self._obj_cache
+
+
+def _rebind_connection_refs(obj, mapping):
+    """Update connection endpoints to point at transformed children."""
+    for attr in ("obj1", "obj2"):
+        if hasattr(obj, attr):
+            target = getattr(obj, attr, None)
+            if target is not None and target in mapping:
+                setattr(obj, attr, mapping[target])
 
 
 def _get_curve_bbox(obj: Curve):
@@ -74,7 +98,7 @@ def polar(r, theta, start_x=1500, start_y=1500, in_degrees=True):
     return x, y
 
 
-def pivot(obj: Object, theta, pivot_x=1500, pivot_y=1500, in_degrees=True):
+def pivot(obj: Object, theta, pivot_x=1500, pivot_y=1500, in_degrees=True) -> Object | _TransformObject:
     """
     Rotate an Object around a pivot.
     :param obj:         Object to be rotated.
@@ -83,6 +107,20 @@ def pivot(obj: Object, theta, pivot_x=1500, pivot_y=1500, in_degrees=True):
     :param pivot_y:     Y coordinate of pivot point.
     :param in_degrees:  If True, assumes given angle theta is in degrees (instead of radians); default is True.
     """
+    if isinstance(obj, CustomObject):
+        tf_obj = _TransformObject()
+        mapping = {}
+
+        for item in copy(obj).get_objs():
+            transformed_item = pivot(item, theta, pivot_x, pivot_y, in_degrees)
+            mapping[item] = transformed_item
+            tf_obj.objs.append(transformed_item)
+
+        for item in tf_obj.objs:
+            _rebind_connection_refs(item, mapping)
+
+        return tf_obj
+
     def pivot_single(x, y):
         """Pivots a single x/y point pair."""
         translated_x = x - pivot_x
@@ -188,13 +226,27 @@ def pivot(obj: Object, theta, pivot_x=1500, pivot_y=1500, in_degrees=True):
     return new_obj
 
 
-def translate(obj: Object, by_x=0, by_y=0):
+def translate(obj: Object, by_x=0, by_y=0) -> Object | _TransformObject:
     """
     Translate an Object by x and y.
     :param obj:     Object to be rotated.
     :param by_x:    Number of units to be translated along the x-axis
     :param by_y:    Number of units to be translated along the y-axis
     """
+    if isinstance(obj, CustomObject):
+        tf_obj = _TransformObject()
+        mapping = {}
+
+        for item in obj.get_objs():
+            transformed_item = translate(item, by_x, by_y)
+            mapping[item] = transformed_item
+            tf_obj.objs.append(transformed_item)
+
+        for item in tf_obj.objs:
+            _rebind_connection_refs(item, mapping)
+
+        return tf_obj
+
     def translate_single(x, y):
         """Translates a single x/y point pair."""
         return x + by_x, y + by_y
@@ -281,13 +333,28 @@ def translate(obj: Object, by_x=0, by_y=0):
     return new_obj
 
 
-def scale(obj: Object, by_x, by_y=None):
+def scale(obj: Object, by_x, by_y=None) -> Object | _TransformObject:
     """
     Scale an Object by x and y, originated from the centroid of the Object.
     :param obj:     Object to be rotated.
     :param by_x:    Number of units to be scaled along the x-axis
     :param by_y:    Number of units to be scaled along the y-axis. If None, by_x is used for both axes.
     """
+    if isinstance(obj, CustomObject):
+        # TODO: This should originate from the CustomObject's centroid, not each individual composing object.
+        tf_obj = _TransformObject()
+        mapping = {}
+
+        for item in obj.get_objs():
+            transformed_item = scale(item, by_x, by_y)
+            mapping[item] = transformed_item
+            tf_obj.objs.append(transformed_item)
+
+        for item in tf_obj.objs:
+            _rebind_connection_refs(item, mapping)
+
+        return tf_obj
+
     if by_x == 0 or by_y == 0:
         raise ValueError("Cannot scale an object by 0.")
 

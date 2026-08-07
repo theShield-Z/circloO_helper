@@ -67,7 +67,7 @@ lvl.to_file("my_circloO_level.txt")
     - [Collectables](#collectables)
   - [Custom Object](#custom-object)
     - [Included Custom Objects](#included-custom-objects)
-  - [Tools](#tools)
+  - [Tools](#tools-1)
   - Converters
     - [Pixel Builder](#pixel-builder-1)
     - [Text](#text)
@@ -315,9 +315,9 @@ circloO Helper contains a few tools to help with repeated tasks, each a function
 - `combine()`
   - Combines the contents of two levels together, keeping the attributes of the first
 
-All tools that take an Object will return a copy of the Object (the original Object will not be altered)
+All tools that take an Object will return a copy of the Object (the original Object will not be altered). If the input is a `CustomObject`, a new Custom Object will be returned as a `TransformObject`.
 
-Tools currently do not support Custom Objects.
+Transformation tools (pivot, translate, and scale) have support for `CustomObject` inputs; dimension and scale currently do not.
 
 
 ## Pixel Builder
@@ -1009,7 +1009,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
 
 ## Tools
 
-- Most transformation tools do not work with Custom Objects
+- When using the transformation tools (pivot, translate, and scale) with Custom Objects, a `TransformObject`, which is a subclass of `CustomObject`, will be returned.
 - `ch.polar(r, theta, start_x, start_y, in_degrees)`
   - Converts a point in polar coordinates to rectangular coordinates.
   - Returns the rectangular coordinates.
@@ -1018,17 +1018,17 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
   - `theta` is the rotation angle, where 0 is to the right.
   - If `in_degrees` is True, `theta` will be interpreted in degrees. If False, it will be interpreted in radians.
 - `ch.pivot(obj, theta, pivot_x, pivot_y, in_degrees)`
-  - Rotates an Object `obj` around a pivot point.
+  - Rotates an Object or Custom Object `obj` around a pivot point.
   - Returns a copy of `obj` and leaves the original unaltered
   - `theta` is the rotation angle, where 0 is to the right.
   - If `in_degrees` is True, `theta` will be interpreted in degrees. If False, it will be interpreted in radians.
   - `pivot_x` and `pivot_y` are the coordinates of the pivot point.
 - `ch.translate(obj, by_x, by_y)`
-  - Translates (moves) an Object `obj` by an x and y value.
+  - Translates (moves) an Object or Custom Object `obj` by an x and y value.
   - Returns a copy of `obj` and leaves the original unaltered
   - `by_x` and `by_y` are both 0 by default, and are the values by which `obj` is shifted.
 - `ch.scale(obj, by_x, by_y)`
-  - Scales an Object `obj` by an x and y value.
+  - Scales an Object or Custom Object `obj` by an x and y value.
   - Returns a copy of `obj` and leaves the original unaltered
   - `by_x` and `by_y` are the values by which `obj` is scaled.
   - If `by_y` is None, the same value as `by_x` will be used, scaling both axes by the same amount.
@@ -1242,5 +1242,8 @@ Ordered dithering patterns:
   - Also convert embedded raster images with `CHImage`.
 - Optional Dependencies
   - Make numpy and numba optional installs; they are both huge libraries and are only used for `Pixels` and its compositions.
+- `tools`
+  - `scale()`: For Custom Objects, scaling should be done from the centroid of the full object (currently, each object is instead independently scaled from their own centroid).
+  - `dimensions()` and `centroid()` still need to be implemented for Custom Objects.
 
 Where relevant, each item in this list can be found in their respective modules within comments prefixed by `TODO`.

@@ -52,6 +52,16 @@ class CustomObject:
     def __len__(self):
         return len(self.get_objs())
 
+    def __copy__(self):
+        cls = self.__class__
+        new_instance = cls.__new__(cls)
+
+        new_instance.__dict__.update(self.__dict__)
+        new_instance.__dict__["_obj_cache"] = []
+        new_instance.__dict__["_id"] = -1
+
+        return new_instance
+
     def get_objs(self):
         if self._obj_cache:
             return self._obj_cache
