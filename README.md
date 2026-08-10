@@ -1237,8 +1237,9 @@ Ordered dithering patterns:
   - Implement more sophisticated tabulation with `'\n'` - instead of always jumping a fixed width, it each tab should line up with the tabs on other lines.
   - Add support for external fonts and an internal vector font.
 - `svg_converter.CHSVG`
-  - Implement filled paths using the `Polygon` Custom Object.
+  - Implement filled paths using the `Polygon` Custom Object or hatching.
   - Also convert embedded raster images with `CHImage`.
+  - Replace svgpathtools with a more reliable library
 - Optional Dependencies
   - Make numpy and numba optional installs; they are both huge libraries and are only used for `Pixels` and its compositions.
 - `tools`

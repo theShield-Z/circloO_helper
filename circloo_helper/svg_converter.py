@@ -1,6 +1,7 @@
 """
 TODO: implement filled paths using the Polygon custom object or hatching
 TODO: also convert embedded images using CHImage
+TODO: Replace svgpathtools with a more reliable library
 """
 
 import cmath
@@ -51,10 +52,26 @@ class CHSVG(CustomObject):
             """
             return scale_pos(offset_pos((complex_pos.real, complex_pos.imag)))
 
+        def is_elliptical_arc(seg, rel_tol=1e-9):
+            if not isinstance(seg, path.Arc):
+                return False
+
+            rx = seg.radius.real
+            ry = seg.radius.imag
+
+            return not math.isclose(rx, ry, rel_tol=rel_tol)
+
         doc = Document(self.filepath)
         paths = doc.paths()
 
-        for p in paths:
+        for p_ in paths:
+            # Convert elliptical Arcs into curves (circloO Arcs must be circular)
+            p = path.Path()
+            for el in parse_path(p_.d()):
+                if isinstance(el, path.Arc) and is_elliptical_arc(el):
+                    p.extend(el.as_cubic_curves())
+                else:
+                    p.append(el)
 
             parsed_path = parse_path(p.d())
             for el in parsed_path:
@@ -84,6 +101,6 @@ class CHSVG(CustomObject):
                         Arc(*c2p(center), start_angle, end_angle, r * self.scale, thickness=self.line_thickness))
 
                 else:
-                    warn(f"One or more paths could not be parsed from {self.filepath}")
+                    warn(f"One or more paths could not be parsed from {self.filepath}: {p}")
 
         return self._obj_cache
