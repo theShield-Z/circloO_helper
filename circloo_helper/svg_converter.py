@@ -1,6 +1,5 @@
 """
-TODO: more complex svgs, like those made with advanced inkscape tools, seem to have incorrect path offsets. more testing needs to be done
-TODO: implement filled paths using the Polygon custom object
+TODO: implement filled paths using the Polygon custom object or hatching
 TODO: also convert embedded images using CHImage
 """
 
@@ -35,7 +34,7 @@ class CHSVG(CustomObject):
         super()._build_objs()
 
         try:
-            from svgpathtools import svg2paths2, parse_path, path
+            from svgpathtools import svg2paths2, parse_path, path, Document
         except ImportError as e:
             raise ImportError("Install 'svg' extras: svgpathtools-light") from e
 
@@ -52,7 +51,8 @@ class CHSVG(CustomObject):
             """
             return scale_pos(offset_pos((complex_pos.real, complex_pos.imag)))
 
-        paths, _, _ = svg2paths2(self.filepath)
+        doc = Document(self.filepath)
+        paths = doc.paths()
 
         for p in paths:
 
