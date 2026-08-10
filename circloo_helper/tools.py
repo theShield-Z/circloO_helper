@@ -1,6 +1,7 @@
 import math
 import subprocess
 from copy import copy
+from warnings import warn
 
 from .object import Object, CustomObject
 import circloo_helper.object_shapes as _os
@@ -35,12 +36,21 @@ def _rebind_connection_refs(obj, mapping):
 
 def _get_curve_bbox(obj: Curve):
     """Returns bounding box as (xmin, xmax, ymin, ymax)"""
-    from svgpathtools import CubicBezier
-    p0 = complex(obj.start_x, obj.start_y)
-    p1 = complex(obj.ctr1_x, obj.ctr1_y)
-    p2 = complex(obj.ctr2_x, obj.ctr2_y)
-    p3 = complex(obj.end_x, obj.end_y)
-    return CubicBezier(p0, p1, p2, p3).bbox()
+    try:
+        from svgpathtools import CubicBezier
+        p0 = complex(obj.start_x, obj.start_y)
+        p1 = complex(obj.ctr1_x, obj.ctr1_y)
+        p2 = complex(obj.ctr2_x, obj.ctr2_y)
+        p3 = complex(obj.end_x, obj.end_y)
+        return CubicBezier(p0, p1, p2, p3).bbox()
+    except ImportError:
+        # TODO: Implement custom implementation of CubicBezier.bbox() and remove svgpathtools dependency
+        warn("tools.dimensions() or tools.centroid(): Inaccurate Curve bounding box. Install 'svg' extras for accurate calculations: svgpathtools-light")
+        xmin = min(obj.start_x, obj.end_x, obj.ctr1_x, obj.ctr2_x)
+        xmax = max(obj.start_x, obj.end_x, obj.ctr1_x, obj.ctr2_x)
+        ymin = min(obj.start_y, obj.end_y, obj.ctr1_y, obj.ctr2_y)
+        ymax = max(obj.start_y, obj.end_y, obj.ctr1_y, obj.ctr2_y)
+        return xmin, xmax, ymin, ymax
 
 
 def _get_arc_bbox(obj: Arc):

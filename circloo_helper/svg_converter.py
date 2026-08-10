@@ -69,7 +69,7 @@ class CHSVG(CustomObject):
             p = path.Path()
             for el in parse_path(p_.d()):
                 if isinstance(el, path.Arc) and is_elliptical_arc(el):
-                    p.extend(el.as_cubic_curves())
+                    p.extend(el.as_cubic_curves(curves=2))
                 else:
                     p.append(el)
 

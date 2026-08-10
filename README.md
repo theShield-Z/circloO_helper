@@ -1034,8 +1034,10 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
   - If `by_y` is None, the same value as `by_x` will be used, scaling both axes by the same amount.
 - `ch.dimensions(obj)`
   - Returns the dimensions of an Object `obj`'s bounding box as (width, height)
+  - If `obj` is a `Curve`, svgpathtools (the 'svg' extras) should be installed for accurate values, but an approximation will be returned regardless.
 - `ch.centroid(obj)`
   - Returns the centroid (geometric center) of an Object `obj` as (x, y)
+  - If `obj` is a `Curve`, svgpathtools (the 'svg' extras) should be installed for accurate values, but an approximation will be returned regardless.
 - `ch.push_to_android(file_path, destination)`
   - Uses ADB to send a file at `file_path` to an Android device's `destination` path.
 - `ch.combine(level_1, level_2)`
