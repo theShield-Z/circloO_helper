@@ -319,8 +319,6 @@ circloO Helper contains a few tools to help with repeated tasks, each a function
 
 All tools that take an Object will return a copy of the Object (the original Object will not be altered). If the input is a `CustomObject`, a new Custom Object will be returned as a `TransformObject`.
 
-Transformation tools (pivot, translate, and scale) have support for `CustomObject` inputs; dimension and scale currently do not.
-
 
 ## Pixel Builder
 
@@ -962,7 +960,7 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
       ```python
       def _build_objs(self):
         super()._build_objs()
-        # Create objects and add them to self.obj_cache
+        # Create objects and add them to self._obj_cache
         return self._obj_cache
       ```
 
@@ -1251,6 +1249,5 @@ Ordered dithering patterns:
   - Make numpy and numba optional installs; they are both huge libraries and are only used for `Pixels` and its compositions.
 - `tools`
   - `scale()`: For Custom Objects, scaling should be done from the centroid of the full object (currently, each object is instead independently scaled from their own centroid).
-  - `dimensions()` and `centroid()` still need to be implemented for Custom Objects.
 
 Where relevant, each item in this list can be found in their respective modules within comments prefixed by `TODO`.
