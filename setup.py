@@ -5,7 +5,7 @@ with open("README.md", 'r') as f:
 
 setup(
     name='circloo_helper',
-    version='1.1.2',
+    version='1.1.3',
     url='https://github.com/theShield-Z/circloO_helper',
     packages=find_packages(),
     description='Build and edit circloO levels using Python',
