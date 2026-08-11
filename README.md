@@ -306,6 +306,8 @@ circloO Helper contains a few tools to help with repeated tasks, each a function
   - Translates (moves) an object by x and y values
 - `scale()`
   - Scales an object by x and y values according to the object's centroid
+- `bounding_box()`
+  - Returns the coordinates of the bounding box of an Object or Custom Object as (xmin, xmax, ymin, ymax).
 - `dimensions()`
   - Returns the dimensions of an object's bounding box as (width, height)
 - `centroid()`
@@ -1032,6 +1034,9 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
   - Returns a copy of `obj` and leaves the original unaltered
   - `by_x` and `by_y` are the values by which `obj` is scaled.
   - If `by_y` is None, the same value as `by_x` will be used, scaling both axes by the same amount.
+- `ch.bounding_box(obj)`
+  - Returns the coordinates of the bounding box of an Object or Custom Object as `(xmin, xmax, ymin, ymax)`.
+  - If `obj` is a `Curve`, svgpathtools (the 'svg' extras) should be installed for accurate values, but an approximation will be returned regardless.
 - `ch.dimensions(obj)`
   - Returns the dimensions of an Object `obj`'s bounding box as (width, height)
   - If `obj` is a `Curve`, svgpathtools (the 'svg' extras) should be installed for accurate values, but an approximation will be returned regardless.

@@ -6,8 +6,12 @@ from warnings import warn
 from .object import Object, CustomObject
 import circloo_helper.object_shapes as _os
 from .circloo_objects import Line, Arc, Curve, Dummy, Portal
+from .level import Level as Level
 
-__all__ = ["polar", "pivot", "translate", "scale", "dimensions", "centroid", "push_to_android", "combine"]
+__all__ = ["polar",
+           "pivot", "translate", "scale",
+           "bounding_box", "dimensions", "centroid",
+           "push_to_android", "combine"]
 
 
 class _TransformObject(CustomObject):
@@ -108,7 +112,7 @@ def polar(r, theta, start_x=1500, start_y=1500, in_degrees=True):
     return x, y
 
 
-def pivot(obj: Object, theta, pivot_x=1500, pivot_y=1500, in_degrees=True) -> Object | _TransformObject:
+def pivot(obj: Object | CustomObject, theta, pivot_x=1500, pivot_y=1500, in_degrees=True) -> Object | _TransformObject:
     """
     Rotate an Object around a pivot.
     :param obj:         Object to be rotated.
@@ -236,7 +240,7 @@ def pivot(obj: Object, theta, pivot_x=1500, pivot_y=1500, in_degrees=True) -> Ob
     return new_obj
 
 
-def translate(obj: Object, by_x=0, by_y=0) -> Object | _TransformObject:
+def translate(obj: Object | CustomObject, by_x=0, by_y=0) -> Object | _TransformObject:
     """
     Translate an Object by x and y.
     :param obj:     Object to be rotated.
@@ -247,7 +251,7 @@ def translate(obj: Object, by_x=0, by_y=0) -> Object | _TransformObject:
         tf_obj = _TransformObject()
         mapping = {}
 
-        for item in obj.get_objs():
+        for item in copy(obj).get_objs():
             transformed_item = translate(item, by_x, by_y)
             mapping[item] = transformed_item
             tf_obj.objs.append(transformed_item)
@@ -343,7 +347,7 @@ def translate(obj: Object, by_x=0, by_y=0) -> Object | _TransformObject:
     return new_obj
 
 
-def scale(obj: Object, by_x, by_y=None) -> Object | _TransformObject:
+def scale(obj: Object | CustomObject, by_x, by_y=None) -> Object | _TransformObject:
     """
     Scale an Object by x and y, originated from the centroid of the Object.
     :param obj:     Object to be rotated.
@@ -355,7 +359,7 @@ def scale(obj: Object, by_x, by_y=None) -> Object | _TransformObject:
         tf_obj = _TransformObject()
         mapping = {}
 
-        for item in obj.get_objs():
+        for item in copy(obj).get_objs():
             transformed_item = scale(item, by_x, by_y)
             mapping[item] = transformed_item
             tf_obj.objs.append(transformed_item)
@@ -454,46 +458,134 @@ def scale(obj: Object, by_x, by_y=None) -> Object | _TransformObject:
     return new_obj
 
 
-def dimensions(obj: Object):
+def bounding_box(obj: Object | CustomObject) -> tuple[float | int, float | int, float | int, float | int]:
+    """
+    Return the coordinates of the bounding box of an Object or CustomObject as (xmin, xmax, ymin, ymax).
+    """
+
+    if isinstance(obj, CustomObject):
+        xmin, xmax, ymin, ymax = float('inf'), -float('inf'), float('inf'), -float('inf')
+        for item in copy(obj).get_objs():
+            try:
+                xmin_, xmax_, ymin_, ymax_ = bounding_box(item)
+                if xmin_ < xmin:
+                    xmin = xmin_
+                if xmax_ > xmax:
+                    xmax = xmax_
+                if ymin_ < ymin:
+                    ymin = ymin_
+                if ymax_ > ymax:
+                    ymax = ymax_
+
+            except ValueError:
+                continue
+
+        if any([val in (float('inf'), -float('inf')) for val in [xmin, xmax, ymin, ymax]]):
+            raise ValueError(f"Object does not have coordinates and cannot be given a bounding box: {[xmin, xmax, ymin, ymax]}")
+
+        return xmin, xmax, ymin, ymax
+
+    elif isinstance(obj, _os.Circle):
+        return (obj.x - obj.radius - .5,
+                obj.x + obj.radius + .5,
+                obj.y - obj.radius - .5,
+                obj.y + obj.radius + .5)
+
+    elif isinstance(obj, _os.Rectangle):
+        # Bounding boxes must account for rotation.
+
+        angle = math.radians(obj.rotation)
+        sin_a = math.sin(angle)
+        cos_a = math.cos(angle)
+
+        hw = obj.width / 2
+        hh = obj.height / 2
+
+        if obj.coords_by_center:
+            cx, cy = obj.x, obj.y
+        else:
+            cx = obj.x + hw
+            cy = obj.y + hh
+
+        rotated_corners = []
+        for x, y in [(-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh)]:
+            rotated_corners.append((cx + x * cos_a - y * sin_a,
+                                    cy + x * sin_a + y * cos_a))
+
+        xs = [x for x, _ in rotated_corners]
+        ys = [y for _, y in rotated_corners]
+
+        return min(xs), max(xs), min(ys), max(ys)
+
+    elif isinstance(obj, _os.Triangle):
+        return (min(obj.x1, obj.x2, obj.x3),
+                max(obj.x1, obj.x2, obj.x3),
+                min(obj.y1, obj.y2, obj.y3),
+                max(obj.y1, obj.y2, obj.y3))
+
+    elif isinstance(obj, Arc):
+        return _get_arc_bbox(obj)
+
+    elif isinstance(obj, Curve):
+        return _get_curve_bbox(obj)
+
+    elif isinstance(obj, Line):
+        return (min(obj.x1, obj.x2),
+                max(obj.x1, obj.x2),
+                min(obj.y1, obj.y2),
+                max(obj.y1, obj.y2))
+
+    elif isinstance(obj, _os.Collectable):
+        return (obj.x - 25, obj.x + 25,
+                obj.y - 25, obj.y + 25)
+
+    elif isinstance(obj, Portal):
+        rad = 40.5 / 2
+        return (obj.portal_x - rad, obj.portal_x + rad,
+                obj.portal_x - rad, obj.portal_y + rad)
+
+    elif isinstance(obj, _os.Player):
+        rad = (obj.size * 64 + 1) / 2
+        return (obj.x - rad, obj.x + rad,
+                obj.y - rad, obj.y + rad)
+
+    else:
+        raise ValueError("Object does not have coordinates and cannot be given a bounding box.")
+
+
+def dimensions(obj: Object | CustomObject) -> tuple[float | int, float | int]:
     """Return the dimensions of an Object's bounding box as (width, height)."""
-    if isinstance(obj, _os.Connection):
-        raise TypeError("Connections have no dimensions.")
 
     if isinstance(obj, _os.Circle):
         width = height = obj.radius * 2 + 1     # actual circle radius is .5 greater than written radius
-    elif isinstance(obj, Arc):
-        xmin, xmax, ymin, ymax = _get_arc_bbox(obj)
-        width = xmax - xmin + obj.thickness * 2
-        height = ymax - ymin + obj.thickness * 2
-    elif isinstance(obj, _os.Rectangle):
-        width = obj.width
-        height = obj.height
-    elif isinstance(obj, _os.Triangle):
-        width = max(obj.x1, obj.x2, obj.x3) - min(obj.x1, obj.x2, obj.x3)
-        height = max(obj.y1, obj.y2, obj.y3) - min(obj.y1, obj.y2, obj.y3)
+
     elif isinstance(obj, Line):
-        width = max(obj.x1, obj.x2) - min(obj.x1, obj.x2)
-        height = max(obj.y1, obj.y2) - min(obj.y1, obj.y2)
+        xmin, xmax, ymin, ymax = bounding_box(obj)
+        width = xmax - xmin
+        height = ymax - ymin
         if width == 0:
             width = obj.thickness * 2
         if height == 0:
             height = obj.thickness * 2
-    elif isinstance(obj, Curve):
-        xmin, xmax, ymin, ymax = _get_curve_bbox(obj)
-        width = xmax - xmin
-        height = ymax - ymin
+
     elif isinstance(obj, _os.Collectable):
         width = height = 50
+
     elif isinstance(obj, Portal):
         width = height = 40.5
+
     elif isinstance(obj, _os.Player):
         width = height = obj.size * 64 + 1
+
     else:
-        raise TypeError(f"Object {type(obj)} has no dimensions.")
+        xmin, xmax, ymin, ymax = bounding_box(obj)
+        width = xmax - xmin
+        height = ymax - ymin
+
     return width, height
 
 
-def centroid(obj: Object):
+def centroid(obj: Object | CustomObject) -> tuple[float | int, float | int]:
     """Return the (x, y) coordinate of an Object's centroid (geometric center)."""
 
     if (isinstance(obj, _os.Circle)
@@ -504,33 +596,25 @@ def centroid(obj: Object):
         cy = obj.y
 
     elif isinstance(obj, _os.Rectangle):
-        cx = obj.x + obj.width / 2
-        cy = obj.y + obj.height / 2
-
-    elif isinstance(obj, _os.Triangle):
-        cx = (obj.x1 + obj.x2 + obj.x3) / 3
-        cy = (obj.y1 + obj.y2 + obj.y3) / 3
+        if obj.coords_by_center:
+            cx = obj.x
+            cy = obj.y
+        else:
+            cx = obj.x + obj.width / 2
+            cy = obj.y + obj.height / 2
 
     elif isinstance(obj, Line):
         cx = (obj.x1 + obj.x2) / 2
         cy = (obj.y1 + obj.y2) / 2
-
-    elif isinstance(obj, Arc):
-        xmin, xmax, ymin, ymax = _get_arc_bbox(obj)
-        cx = (xmin + xmax) / 2
-        cy = (ymin + ymax) / 2
-
-    elif isinstance(obj, Curve):
-        xmin, xmax, ymin, ymax = _get_curve_bbox(obj)
-        cx = (xmin + xmax) / 2
-        cy = (ymin + ymax) / 2
 
     elif isinstance(obj, Portal):
         cx = obj.portal_x
         cy = obj.portal_y
 
     else:
-        raise TypeError(f"Object {type(obj)} does not have a centroid.")
+        xmin, xmax, ymin, ymax = bounding_box(obj)
+        cx = (xmax + xmin) / 2
+        cy = (ymax + ymin) / 2
 
     return cx, cy
 
@@ -552,7 +636,7 @@ def push_to_android(file_path, destination='/sdcard'):
         print(f"An error has occurred: {e}")
 
 
-def combine(level_1: 'Level', level_2: 'Level') -> 'Level':
+def combine(level_1: Level, level_2: Level) -> Level:
     """
     Combines the contents of two levels, keeping the header of the first level and ensuring no duplicates.
     """
