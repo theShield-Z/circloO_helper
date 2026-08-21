@@ -397,6 +397,6 @@ def read_file(path: str) -> Level:
     """
     Read level text contents from a file.
     """
-    with open(path, 'r') as f:
+    with open(path, 'r', encoding="utf-8") as f:
         lvl = parse(f.read())
     return lvl

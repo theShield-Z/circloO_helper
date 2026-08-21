@@ -150,5 +150,5 @@ class Level:
         Save level text to path.
         """
         txt = str(self)
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding="utf-8") as f:
             f.write(txt)
