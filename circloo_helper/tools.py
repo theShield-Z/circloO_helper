@@ -2,6 +2,7 @@ import math
 import subprocess
 from copy import copy
 from warnings import warn
+from functools import cache
 
 from .object import Object, CustomObject
 import circloo_helper.object_shapes as _os
@@ -458,6 +459,7 @@ def scale(obj: Object | CustomObject, by_x, by_y=None) -> Object | _TransformObj
     return new_obj
 
 
+@cache
 def bounding_box(obj: Object | CustomObject) -> tuple[float | int, float | int, float | int, float | int]:
     """
     Return the coordinates of the bounding box of an Object or CustomObject as (xmin, xmax, ymin, ymax).
