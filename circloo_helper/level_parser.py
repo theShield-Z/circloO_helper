@@ -315,7 +315,7 @@ def parse(level_text: str) -> Level:
                 case 'wheelsprite':
                     cur_obj.wheelsprite = True
 
-                case 'iGrow':
+                case 'iGrow' | 'iNotGrow':
                     cur_obj.part_of_segment = int(split_line[1])
 
                 case 'zoomFactor':
