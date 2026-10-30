@@ -882,6 +882,8 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
         - Set either x or y to 9999 to not change the speed in that direction
       - `Impulse` - Applies a force to an Object in the x- and y-directions
         - Requires two additional attributes: x-impulse and y-impulse
+      - `Rectivate` - For deactivated Collectables, re-enables sprite and collision
+      - `Deactivate` - For active Collectables, disables sprite and collision
       - `Trigger` - For Collectables, collects and triggers the collectable
       - `TriggerRandom` - For Collectables, collects and triggers connected collectables randomly
         - If multiple Collectables are connected to the same `obj1` trigger, one of them is chosen at random

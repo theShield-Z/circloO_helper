@@ -1079,6 +1079,8 @@ class SpecialConnection(_os.Connection):
             'RotationOff' - disables movable rectangles/triangles from rotating,
             'SetSpeed' - sets speed of object in x- and y-direction; requires extra x & y arg,
             'Impulse' - applies a force to an object in x- and y-direction; requires extra x & y arg,
+            'Reactivate' - For deactivated Collectables, re-enables sprite and collision,
+            'Deactivate' - For active Collectables, disables sprite and collision,
             'Trigger' - collects/triggers the collectable it is connected to,
             'TriggerRandom' - collects/triggers at random one of the collectables it is connected to (if it is only connected to one, it is triggered with a 50%)
         :param collectable: reference to connected special collectable
