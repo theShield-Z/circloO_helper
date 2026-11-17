@@ -261,6 +261,7 @@ class PauseDetector(_CustomObject, _shapes.Other):
     def _build_objs(self):
         super()._build_objs()
         self.output_trigger = _o.SpecialCollectable(self.x - 50, self.y - 25, is_trigger=True, collect_from_object=True)
+        self.output_trigger.mute()
 
         # Physical Objects.
 
