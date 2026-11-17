@@ -3,15 +3,15 @@ import tripy as _tripy
 
 from .object import CustomObject as _CustomObject
 import circloo_helper.circloo_objects as _o
-import circloo_helper.object_types as _ot
-import circloo_helper.object_shapes as _os
+import circloo_helper.object_types as _types
+import circloo_helper.object_shapes as _shapes
 from .tools import (
     pivot as _pivot,
     polar as _polar
 )
 
 
-class OutlineRectangle(_CustomObject, _ot.Solid, _os.Rectangle, _os.Line):
+class OutlineRectangle(_CustomObject, _types.Solid, _shapes.Rectangle, _shapes.Line):
     def __init__(self,
                  x_pos: int | float,
                  y_pos: int | float,
@@ -71,7 +71,7 @@ class OutlineRectangle(_CustomObject, _ot.Solid, _os.Rectangle, _os.Line):
         return self._obj_cache
 
 
-class MoveableArc(_CustomObject, _ot.Moveable, _os.Line):
+class MoveableArc(_CustomObject, _types.Moveable, _shapes.Line):
     def __init__(self,
                  x_pos: int | float,
                  y_pos: int | float,
@@ -159,7 +159,7 @@ class MoveableArc(_CustomObject, _ot.Moveable, _os.Line):
         return self._obj_cache
 
 
-class Polygon(_CustomObject, _ot.Solid, _os.Other):
+class Polygon(_CustomObject, _types.Solid, _shapes.Other):
     def __init__(self, *points):
         """
         Solid simple Polygon. Built using ear-clipping method.
@@ -179,7 +179,7 @@ class Polygon(_CustomObject, _ot.Solid, _os.Other):
         return self._obj_cache
 
 
-class Star(_CustomObject, _ot.Solid, _os.Other):
+class Star(_CustomObject, _types.Solid, _shapes.Other):
     def __init__(self,
                  x_pos,
                  y_pos,
@@ -241,7 +241,7 @@ class Star(_CustomObject, _ot.Solid, _os.Other):
         return self._obj_cache
 
 
-class PauseDetector(_CustomObject, _os.Other):
+class PauseDetector(_CustomObject, _shapes.Other):
     def __init__(self, x: int | float, y: int | float):
         """
         Detects when the Pause button has been pressed.
