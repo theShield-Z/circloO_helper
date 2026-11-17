@@ -239,6 +239,8 @@ circloO Helper contains a few Custom Objects:
   - A Solid polygon, comprising SolidTriangles.
 - `Star`
   - A Solid n-pointed star, comprising SolidTriangles.
+- `PauseDetector`
+  - A mechanism that detects when the Pause button has been pressed.
 
 If you need more control over the base objects that a Custom Object comprises, you can store them in a new list variable by calling the `get_objs()` method, alter them as needed, and add the contents of that list to the Level. For example, if you want to connect all four sides of an `OutlineRectangle` to a `MoveableCircle` with a Rope:
 
@@ -1007,6 +1009,17 @@ Most Objects also inherit an ObjectType and an ObjectShape, which both give them
     - `n_points (int)` - Number of points on the star; default is 5
     - `rotation (float)` - Rotation in degrees of the star; default is -90 (upright)
       - 0 points the star to the left, and increasing rotates clockwise.
+- `PauseDetector`
+  - No Type
+  - Shape: `Other`
+  - Detects when the Pause button has been pressed
+  - Use a `SpecialConnection` with the `output_trigger` attribute to connect to other objects.
+    - `output_trigger` is only available after `get_objects()` method has been called.
+  - This mechanism is very sensitive to object order—editing a level with this a `PauseDetector` in-game may cause it to break
+    - It is recommended to add this to a level only after all in-game editing is finished.
+  - Additional attributes:
+    - `x (float)` - X-position of mechanism's center
+    - `y (float)` - Y-position of mechanism's center
 
 
 ## Tools

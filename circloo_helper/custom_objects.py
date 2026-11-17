@@ -239,3 +239,89 @@ class Star(_CustomObject, _ot.Solid, _os.Other):
         self._obj_cache.extend(Polygon(*points).get_objs())
 
         return self._obj_cache
+
+
+class PauseDetector(_CustomObject, _os.Other):
+    def __init__(self, x: int | float, y: int | float):
+        """
+        Detects when the Pause button has been pressed.
+        The output_trigger attribute is only available after PauseDetector.get_objects() has been called.
+
+        This mechanism is very sensitive to object order--editing a level with this a PauseDetector in-game may cause it
+        to break. It is recommended to add this to a level only after all in-game editing is finished.
+
+        :param x: X-position of mechanism's center.
+        :param y: Y-position of mechanism's center.
+        """
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.output_trigger: None | _o.SpecialCollectable = None
+
+    def _build_objs(self):
+        super()._build_objs()
+        self.output_trigger = _o.SpecialCollectable(self.x - 50, self.y - 25, is_trigger=True, collect_from_object=True)
+
+        # Physical Objects.
+
+        out_gen = _o.CircleGenerator(self.x - 50, self.y - 25, 15, 0.01, 0, 9999, start_off=True, no_fade=True)
+        anchor = _o.SolidCircle(self.x + 50, self.y - 25, 15)
+
+        anchor_trig_1 = _o.SpecialCollectable(self.x + 50, self.y - 25, is_trigger=True, collect_from_object=True)
+        anchor_trig_1.mute()
+        anchor_trig_2 = _o.SpecialCollectable(self.x + 50, self.y - 25, is_trigger=True, collect_from_object=True)
+        anchor_trig_2.mute()
+        anchor_trig_3 = _o.SpecialCollectable(self.x + 50, self.y - 25, is_trigger=True, collect_from_object=True)
+        anchor_trig_3.mute()
+
+        loop_gen_1 = _o.CircleGenerator(self.x - 50, self.y + 25, 15, 0, 0, 9999, no_fade=True)
+        loop_gen_2 = _o.CircleGenerator(self.x, self.y + 25, 15, 0, 0, 9999, no_fade=True, start_off=True)
+        loop_gen_3 = _o.CircleGenerator(self.x + 50, self.y + 25, 15, 0, 0, 9999, no_fade=True, start_off=True)
+
+        loop_trig_1 = _o.SpecialCollectable(self.x - 50, self.y + 25, is_trigger=True, collect_from_object=True)
+        loop_trig_1.mute()
+        loop_trig_2 = _o.SpecialCollectable(self.x, self.y + 25, is_trigger=True, collect_from_object=True)
+        loop_trig_2.mute()
+        loop_trig_3 = _o.SpecialCollectable(self.x + 50, self.y + 25, is_trigger=True, collect_from_object=True)
+        loop_trig_3.mute()
+
+        # Instantly pulls output generator to the anchor, unless game is paused.
+        rope = _o.Rope(out_gen, anchor, max_length=-100)
+
+        # Special Connections.
+
+        # Spawn/Destroy output generator.
+        out_spawn_1 = _o.SpecialConnection(loop_trig_1, out_gen, 'NowIf')
+        out_spawn_2 = _o.SpecialConnection(loop_trig_2, out_gen, 'NowIf')
+        out_spawn_3 = _o.SpecialConnection(loop_trig_3, out_gen, 'NowIf')
+        out_destroy_1 = _o.SpecialConnection(anchor_trig_1, out_gen, 'Destroy')
+        out_destroy_2 = _o.SpecialConnection(anchor_trig_2, out_gen, 'Destroy')
+        out_destroy_3 = _o.SpecialConnection(anchor_trig_3, out_gen, 'Destroy')
+
+        # Loop connections.
+        l1_dest = _o.SpecialConnection(loop_trig_1, loop_gen_1, 'Destroy')
+        l1_spawn_l2 = _o.SpecialConnection(loop_trig_1, loop_gen_2, 'NowIf')
+        l2_dest = _o.SpecialConnection(loop_trig_2, loop_gen_2, 'Destroy')
+        l2_spawn_l3 = _o.SpecialConnection(loop_trig_2, loop_gen_3, 'NowIf')
+        l3_dest = _o.SpecialConnection(loop_trig_3, loop_gen_3, 'Destroy')
+        l3_spawn_l1 = _o.SpecialConnection(loop_trig_3, loop_gen_1, 'NowIf')
+
+        # Anchor trigger loop connections.
+        anchor_reactivate_12 = _o.SpecialConnection(anchor_trig_1, anchor_trig_2, 'Reactivate')
+        anchor_reactivate_23 = _o.SpecialConnection(anchor_trig_2, anchor_trig_3, 'Reactivate')
+        anchor_reactivate_31 = _o.SpecialConnection(anchor_trig_3, anchor_trig_1, 'Reactivate')
+        anchor_deactivate_13 = _o.SpecialConnection(anchor_trig_1, anchor_trig_3, 'Deactivate')
+        anchor_deactivate_32 = _o.SpecialConnection(anchor_trig_3, anchor_trig_2, 'Deactivate')
+        anchor_deactivate_21 = _o.SpecialConnection(anchor_trig_2, anchor_trig_1, 'Deactivate')
+
+        # All objects must be added in a very specific order to work.
+        self._obj_cache.extend([
+            out_gen, anchor_trig_1, anchor_trig_2, loop_trig_1, loop_trig_2, loop_trig_3,
+            loop_gen_3, loop_gen_2, loop_gen_1, anchor, anchor_trig_3, self.output_trigger,
+            rope, l1_dest, anchor_reactivate_23, out_spawn_3, anchor_reactivate_31, l3_spawn_l1,
+            anchor_reactivate_12, l2_dest, l3_dest, l1_spawn_l2, l2_spawn_l3, out_destroy_3,
+            out_spawn_1, out_spawn_2, out_destroy_2, out_destroy_1, anchor_deactivate_13, anchor_deactivate_32,
+            anchor_deactivate_21
+        ])
+
+        return self._obj_cache
